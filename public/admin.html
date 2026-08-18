@@ -3,174 +3,392 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tenebris Master Console V3</title>
+    <title>Kiber-Pult | Admin Panel</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; }
-        body { background: #05080c; color: #00ffaa; padding: 15px; }
-        
-        #auth-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #020305; display: flex; justify-content: center; align-items: center; z-index: 9999;
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --accent-color: #238636;
+            --danger-color: #da3633;
+            --text-color: #c9d1d9;
+            --glow-color: rgba(56, 139, 253, 0.15);
         }
-        .auth-box { background: #0d131d; border: 2px solid #ff003c; padding: 25px; border-radius: 8px; text-align: center; max-width: 360px; width: 90%; }
-        .auth-box input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #00ffaa; text-align: center; margin: 12px 0; }
-        .auth-box button { width: 100%; padding: 12px; background: #ff003c; color: #fff; border: none; font-weight: bold; cursor: pointer; }
 
-        #admin-content { display: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; margin-top: 15px; }
-        .card { background: #0a0f18; border: 1px solid #1f2937; padding: 15px; border-radius: 6px; }
-        .card-header { font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        
-        input, textarea, button { width: 100%; padding: 10px; margin-top: 8px; background: #030508; border: 1px solid #1f2937; color: #fff; border-radius: 4px; outline: none; }
-        button { cursor: pointer; font-weight: bold; }
-        .btn-red { background: #ff003c; color: #fff; border: none; }
-        .btn-gold { background: #d4af37; color: #000; border: none; }
-        .btn-blue { background: #0088cc; color: #fff; border: none; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-        .player-item { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #222; }
-        .player-item button { width: auto; margin: 0; padding: 4px 8px; font-size: 0.75rem; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Modal Auth UI */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 17, 23, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .auth-card h2 {
+            margin-bottom: 15px;
+            color: #58a6ff;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        /* Main Panel Layout */
+        #admin-panel {
+            display: none;
+            width: 100%;
+            max-width: 900px;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .panel-header {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h1 {
+            font-size: 1.4rem;
+            color: #58a6ff;
+        }
+
+        .status-badge {
+            background: rgba(35, 134, 54, 0.2);
+            color: #3fb950;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid #238636;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-card h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Inputs & Buttons */
+        input[type="text"], input[type="password"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: #fff;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px var(--glow-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        /* Players List */
+        .players-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .player-item {
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #e6edf3;
+        }
+
+        .btn-private {
+            background: #1f6beb;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+
+        /* Private Message Modal */
+        #pm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .file-upload-wrapper {
+            margin-bottom: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: block;
+            background: #21262d;
+            border: 1px dashed var(--border-color);
+            padding: 12px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #8b949e;
+        }
+
+        .file-upload-label:hover {
+            border-color: #58a6ff;
+            color: #fff;
+        }
+
+        #file-preview {
+            max-width: 100%;
+            max-height: 150px;
+            margin-top: 10px;
+            display: none;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
 
-<div id="auth-overlay">
-    <div class="auth-box">
-        <h2 style="color:#ff003c;">🔒 KIBER-PULT ACCESS</h2>
-        <input type="password" id="admin-pass-input" placeholder="••••••••" onkeypress="if(event.key==='Enter') checkPassword()">
-        <button onclick="checkPassword()">TIZIMGA KIRISH</button>
-    </div>
-</div>
-
-<h2 style="color:#ff003c; text-align:center;">🎛 MASTER CONSOLE V3 (PLAYERS & MEDIA)</h2>
-
-<div id="admin-content">
-
-    <!-- 1. ONLAYN O'YINCHILAR RO'YXATI & SHAXSIY XABAR -->
-    <div class="card" style="border-left: 4px solid #00ffaa;">
-        <div class="card-header" style="color:#00ffaa;">🟢 ONLAYN O'YINCHILAR</div>
-        <div id="players-list" style="max-height: 200px; overflow-y: auto;">
-            <div style="color:#888; font-size:0.8rem;">[O'yinchilar kutilmoqda...]</div>
+    <!-- Kirish Paroli Oynasi -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h2>🔒 KIBER-PULT ACCESS</h2>
+            <input type="password" id="admin-pass" placeholder="Parolni kiriting...">
+            <button onclick="checkAuth()">KIRISH</button>
+            <p id="auth-err" style="color: var(--danger-color); font-size: 0.85rem; margin-top: 10px; display: none;">Xato parol kiritildi!</p>
         </div>
     </div>
 
-    <!-- 2. GALEREYADAN RASM YUKLASH HAMDA DALIL CHIQARISH -->
-    <div class="card" style="border-left: 4px solid #d4af37;">
-        <div class="card-header" style="color:#d4af37;">📷 RASMLI DALIL YUBORISH</div>
-        <input type="text" id="ev-title" placeholder="Dalil Nomi (masalan: FOTO DALIL #001)">
-        <textarea id="ev-desc" placeholder="Tavsif..."></textarea>
-        
-        <label style="font-size:0.8rem; color:#aaa; margin-top:10px; display:block;">Qurilmadan rasm faylini tanlang:</label>
-        <input type="file" id="ev-file-input" accept="image/*" style="background:#111;">
+    <!-- Asosiy Boshqaruv Paneli -->
+    <div id="admin-panel">
+        <div class="panel-header">
+            <h1>⚙️ BOSHGARUV PANELI</h1>
+            <span class="status-badge" id="server-status">ONLINE</span>
+        </div>
 
-        <button class="btn-gold" onclick="sendEvidenceWithImage()">DALILNI RASMI BILAN YUBORISH</button>
+        <!-- Onlayn O'yinchilar Bo'limi -->
+        <div class="section-card">
+            <h3>🟢 ONLAYN O'YINCHILAR (<span id="player-count">0</span>)</h3>
+            <div class="players-list" id="players-container">
+                <p style="color: #8b949e;">Hozircha hech kim onlayn emas...</p>
+            </div>
+        </div>
+
+        <!-- Dalillar va Rasm Yuklash Bo'limi -->
+        <div class="section-card">
+            <h3>🖼️ YANGI DALIL / RASM YUKLASH</h3>
+            <input type="text" id="evidence-title" placeholder="Dalil sarlavhasi (masalan: Iz 04)">
+            <textarea id="evidence-desc" rows="3" placeholder="Dalil tavsifi hamda xabar matni..."></textarea>
+            
+            <div class="file-upload-wrapper">
+                <label for="evidence-file" class="file-upload-label" id="file-label">📁 Galereyadan rasm tanlang</label>
+                <input type="file" id="evidence-file" accept="image/*" onchange="handleFileSelect(event)">
+                <img id="file-preview" src="#" alt="Preview">
+            </div>
+
+            <button onclick="sendEvidence()">DALILNI RASMI BILAN YUBORISH</button>
+        </div>
     </div>
 
-    <!-- 3. CHAT VA RESET -->
-    <div class="card" style="border-left: 4px solid #ff003c;">
-        <div class="card-header" style="color:#ff003c;">💬 UMUMIY CHAT & RESET</div>
-        <input type="text" id="admin-nick" placeholder="Nomingiz (masalan: ADMIN)">
-        <input type="text" id="admin-msg" placeholder="Umumiy xabar...">
-        <button class="btn-red" onclick="sendMsg()">UMUMIY CHATGA YUBORISH</button>
-        <hr style="border-color:#1f2937; margin:15px 0;">
-        <input type="text" id="new-case-title" placeholder="Yangi Ish Sarlavhasi">
-        <button class="btn-gold" onclick="startNewCase()">⚠️ YANGI JINOIY ISH BOSHLASH</button>
+    <!-- Shaxsiy Xabar Yuborish Modali -->
+    <div id="pm-modal">
+        <div class="auth-card" style="max-width: 400px;">
+            <h3>💬 Shaxsiy Xabar: <span id="pm-target-name" style="color: #58a6ff;"></span></h3>
+            <textarea id="pm-message" rows="4" placeholder="Xabaringizni yozing..."></textarea>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="sendPrivateMessage()">YUBORISH</button>
+                <button onclick="closePmModal()" style="background: #21262d;">BEKOR QILISH</button>
+            </div>
+        </div>
     </div>
 
-</div>
+    <script>
+        // SOZLANGAN PAROL: zaynab
+        const ADMIN_PASSWORD = "zaynab";
+        const socket = io();
+        let selectedPlayerId = null;
+        let selectedImageData = null;
 
-<script>
-    const ADMIN_PASSWORD = "zaynab!";
-
-    function checkPassword() {
-        if (document.getElementById('admin-pass-input').value === ADMIN_PASSWORD) {
-            document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('admin-content').style.display = 'grid';
-        }
-    }
-
-    const socket = io();
-
-    // Onlayn O'yinchilar Ro'yxatini Qabul Qilish
-    socket.on('update_online_players', (playersMap) => {
-        const container = document.getElementById('players-list');
-        container.innerHTML = '';
-
-        const keys = Object.keys(playersMap);
-        if(keys.length === 0) {
-            container.innerHTML = '<div style="color:#888; font-size:0.8rem;">[Ayni vaqda o\'yinchilar yo\'q]</div>';
-            return;
+        function checkAuth() {
+            const input = document.getElementById("admin-pass").value;
+            if (input === ADMIN_PASSWORD) {
+                document.getElementById("auth-overlay").style.display = "none";
+                document.getElementById("admin-panel").style.display = "grid";
+                socket.emit("admin-login");
+            } else {
+                document.getElementById("auth-err").style.display = "block";
+            }
         }
 
-        keys.forEach(socketId => {
-            const nick = playersMap[socketId];
-            const item = document.createElement('div');
-            item.className = 'player-item';
-            item.innerHTML = `
-                <span>👤 <strong>${nick}</strong></span>
-                <button class="btn-blue" onclick="sendPrivateMsg('${socketId}', '${nick}')">💬 Shaxsiy Xabar</button>
-            `;
-            container.appendChild(item);
+        // Enter tugmasini bosganda ham kirish
+        document.getElementById("admin-pass").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") checkAuth();
         });
-    });
 
-    // Shaxsiy Xabar Yuborish
-    function sendPrivateMsg(socketId, nick) {
-        const text = prompt(`[${nick}] uchun maxfiy shaxsiy xabaringizni yozing:`);
-        if(text) {
-            socket.emit('admin_send_private_msg', {
-                targetSocketId: socketId,
-                text: text,
-                from: 'ADMIN MAXFIY BIRIKTIRMA'
+        // O'yinchilar ro'yxatini qabul qilish
+        socket.on("update-players", (players) => {
+            const container = document.getElementById("players-container");
+            document.getElementById("player-count").innerText = players.length;
+
+            if (players.length === 0) {
+                container.innerHTML = `<p style="color: #8b949e;">Hozircha hech kim onlayn emas...</p>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            players.forEach(player => {
+                const item = document.createElement("div");
+                item.className = "player-item";
+                item.innerHTML = `
+                    <span class="player-name">👤 ${player.name}</span>
+                    <button class="btn-private" onclick="openPmModal('${player.id}', '${player.name}')">💬 Shaxsiy Xabar</button>
+                `;
+                container.appendChild(item);
             });
-            alert(`Xabar ${nick} ga yuborildi!`);
-        }
-    }
+        });
 
-    // Qurilmadagi Rasm Faylini O'qib Dalil Sifatida Yuborish
-    function sendEvidenceWithImage() {
-        const title = document.getElementById('ev-title').value;
-        const desc = document.getElementById('ev-desc').value;
-        const fileInput = document.getElementById('ev-file-input');
-
-        if(!title || !desc) {
-            alert("Sarlavha va tavsifni yozing!");
-            return;
+        // Shaxsiy xabar oynasini ochish
+        function openPmModal(id, name) {
+            selectedPlayerId = id;
+            document.getElementById("pm-target-name").innerText = name;
+            document.getElementById("pm-modal").style.display = "flex";
         }
 
-        if (fileInput.files && fileInput.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64Image = e.target.result; // Rasm kodi
-                socket.emit('admin_release_evidence', { title, desc, image: base64Image });
-                alert("Rasmli dalil yuborildi!");
-                document.getElementById('ev-title').value = '';
-                document.getElementById('ev-desc').value = '';
-                fileInput.value = '';
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-        } else {
-            // Rasmsiz dalil
-            socket.emit('admin_release_evidence', { title, desc, image: null });
-            alert("Dalil yuborildi!");
+        function closePmModal() {
+            document.getElementById("pm-modal").style.display = "none";
+            document.getElementById("pm-message").value = "";
+            selectedPlayerId = null;
         }
-    }
 
-    function sendMsg() {
-        const user = document.getElementById('admin-nick').value || 'ADMIN';
-        const text = document.getElementById('admin-msg').value;
-        if(text) {
-            socket.emit('send_message', { user, text, role: 'admin' });
-            document.getElementById('admin-msg').value = '';
+        function sendPrivateMessage() {
+            const msg = document.getElementById("pm-message").value;
+            if (msg && selectedPlayerId) {
+                socket.emit("send-private-msg", { targetId: selectedPlayerId, message: msg });
+                alert("Shaxsiy xabar yuborildi!");
+                closePmModal();
+            }
         }
-    }
 
-    function startNewCase() {
-        const title = document.getElementById('new-case-title').value;
-        if(title && confirm("Yangi jinoyat boshlansinmi?")) {
-            socket.emit('admin_start_new_case', { title });
+        // Galereyadan rasmni o'qib olish (Base64)
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedImageData = e.target.result;
+                    const preview = document.getElementById("file-preview");
+                    preview.src = selectedImageData;
+                    preview.style.display = "block";
+                    document.getElementById("file-label").innerText = `📁 ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
         }
-    }
-</script>
 
+        // Dalil va Rasmni tarqatish
+        function sendEvidence() {
+            const title = document.getElementById("evidence-title").value;
+            const desc = document.getElementById("evidence-desc").value;
+
+            if (!title || !desc) {
+                alert("Sarlavha va tavsifni kiriting!");
+                return;
+            }
+
+            socket.emit("new-evidence", {
+                title: title,
+                desc: desc,
+                image: selectedImageData
+            });
+
+            alert("Dalil barcha o'yinchilarga muvaffaqiyatli yuborildi!");
+            
+            // Maydonlarni tozalash
+            document.getElementById("evidence-title").value = "";
+            document.getElementById("evidence-desc").value = "";
+            document.getElementById("evidence-file").value = "";
+            document.getElementById("file-preview").style.display = "none";
+            document.getElementById("file-label").innerText = "📁 Galereyadan rasm tanlang";
+            selectedImageData = null;
+        }
+    </script>
 </body>
 </html>
