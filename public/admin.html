@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Tenebris Admin Control Panel</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { background: #111; color: #fff; font-family: monospace; padding: 20px; }
+        .card { background: #1e1e1e; border: 1px solid #ff003c; padding: 20px; margin-bottom: 20px; }
+        input, textarea, button { width: 100%; padding: 10px; margin-top: 10px; background: #000; border: 1px solid #444; color: #fff; }
+        button { background: #ff003c; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>🎛 TENEBRIS GAME MASTER PANEL</h1>
+
+<!-- 1. Anonim Xabar Yuborish -->
+<div class="card">
+    <h3>💬 Live Chatga Maxfiy Xabar Tashlash</h3>
+    <input type="text" id="admin-name" placeholder="Nom (Masalan: Anonim Guvoh / Tergov Boshlig'i)">
+    <textarea id="admin-msg" placeholder="Xabar matni..."></textarea>
+    <button onclick="sendAdminMsg()">CHATGA CHIQARISH</button>
+</div>
+
+<!-- 2. Yangi Dalil Chiqarish -->
+<div class="card">
+    <h3>📁 Yangi Dalil Chiqarish (Barcha ekranlarda paydo bo'ladi)</h3>
+    <input type="text" id="evidence-title" placeholder="Dalil Sarlavhasi (Masalan: DALIL #002)">
+    <textarea id="evidence-desc" placeholder="Tavsif yoki maxfiy havola..."></textarea>
+    <button onclick="releaseEvidence()">DALILNI FAOLLASHTIRISH</button>
+</div>
+
+<script>
+    const socket = io();
+
+    function sendAdminMsg() {
+        const user = document.getElementById('admin-name').value || 'QORA NIQOB';
+        const text = document.getElementById('admin-msg').value;
+        if(text) {
+            socket.emit('send_message', { user, text, role: 'admin' });
+            document.getElementById('admin-msg').value = '';
+        }
+    }
+
+    function releaseEvidence() {
+        const title = document.getElementById('evidence-title').value;
+        const desc = document.getElementById('evidence-desc').value;
+        if(title && desc) {
+            socket.emit('admin_release_evidence', { title, desc });
+            document.getElementById('evidence-title').value = '';
+            document.getElementById('evidence-desc').value = '';
+        }
+    }
+</script>
+
+</body>
+</html>
