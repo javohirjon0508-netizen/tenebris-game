@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="uz">
 <head>
@@ -9,44 +10,73 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; }
         body { background: #030508; color: #00ffaa; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* Neon Grafika va Header */
-        header { background: #090d14; padding: 12px; border-bottom: 2px solid #ff003c; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 15px rgba(255,0,60,0.3); }
-        .case-title { font-size: 0.9rem; color: #ff003c; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        /* Nickname Kiritish Modali */
+        #nick-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #020305; display: flex; justify-content: center; align-items: center; z-index: 10000;
+        }
+        .nick-box {
+            background: #0d131d; border: 2px solid #00ffaa; padding: 25px; border-radius: 8px; text-align: center; width: 85%; max-width: 350px;
+        }
+        .nick-box input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #00ffaa; text-align: center; margin: 15px 0; font-weight: bold; }
+        .nick-box button { width: 100%; padding: 12px; background: #00ffaa; color: #000; border: none; font-weight: bold; cursor: pointer; }
+
+        /* Shaxsiy Xabar Modali */
+        #dm-overlay {
+            position: fixed; top: 20px; right: 20px; left: 20px;
+            background: rgba(255, 0, 60, 0.95); color: #fff; padding: 15px; border-radius: 8px;
+            box-shadow: 0 0 20px #ff003c; display: none; z-index: 9999; animation: pulse 1.5s infinite;
+        }
+
+        header { background: #090d14; padding: 12px; border-bottom: 2px solid #ff003c; display: flex; justify-content: space-between; align-items: center; }
+        .case-title { font-size: 0.85rem; color: #ff003c; font-weight: bold; }
         
-        /* Mobile Navigation Tabs */
         .mobile-tabs { display: flex; background: #0a0e17; border-bottom: 1px solid #1f2937; }
-        .tab-btn { flex: 1; padding: 10px; background: none; border: none; color: #6b7280; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
+        .tab-btn { flex: 1; padding: 10px; background: none; border: none; color: #6b7280; font-weight: bold; font-size: 0.8rem; }
         .tab-btn.active { color: #00ffaa; border-bottom: 2px solid #00ffaa; background: #111827; }
 
         .main-container { flex: 1; display: flex; position: relative; overflow: hidden; }
         .panel { flex: 1; background: #06090e; padding: 15px; display: none; flex-direction: column; overflow-y: auto; }
         .panel.active-panel { display: flex; }
 
-        /* Desktop Grid Screen */
         @media (min-width: 768px) {
             .mobile-tabs { display: none; }
             .panel { display: flex !important; border-right: 1px solid #111827; }
         }
 
-        /* Glassmorphism Cards */
-        .evidence-card { background: rgba(18, 24, 38, 0.8); border: 1px solid #1f2937; border-left: 4px solid #ff003c; padding: 12px; margin-bottom: 12px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .evidence-card img { width: 100%; max-height: 200px; object-fit: cover; margin-top: 8px; border-radius: 4px; border: 1px solid #333; }
-        .evidence-card audio { width: 100%; margin-top: 8px; }
+        .evidence-card { background: rgba(18, 24, 38, 0.8); border: 1px solid #1f2937; border-left: 4px solid #ff003c; padding: 12px; margin-bottom: 12px; border-radius: 4px; }
+        .evidence-card img { width: 100%; max-height: 250px; object-fit: contain; margin-top: 8px; border-radius: 4px; border: 1px solid #333; background:#000; }
 
-        /* Terminal & Chat */
-        .terminal-box, .chat-box { flex: 1; background: #000; border: 1px solid #111827; padding: 10px; overflow-y: auto; font-size: 0.85rem; margin-bottom: 10px; border-radius: 4px; }
+        .terminal-box, .chat-box { flex: 1; background: #000; border: 1px solid #111827; padding: 10px; overflow-y: auto; font-size: 0.85rem; margin-bottom: 10px; }
         .input-row { display: flex; gap: 5px; }
         input { flex: 1; background: #0d131d; border: 1px solid #1f2937; color: #fff; padding: 10px; border-radius: 4px; outline: none; }
-        button { background: #ff003c; color: #fff; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        button { background: #ff003c; color: #fff; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; }
     </style>
 </head>
 <body>
 
+<!-- NICKNAME ENTER -->
+<div id="nick-overlay">
+    <div class="nick-box">
+        <h3 style="color:#00ffaa;">TENEBRIS TERGOV TIZIMI</h3>
+        <p style="color:#aaa; font-size:0.8rem; margin-top:5px;">TAXALLUSINGIZNI KIRITING:</p>
+        <input type="text" id="player-nick-input" placeholder="masalan: Agent_Uz" onkeypress="if(event.key==='Enter') joinGame()">
+        <button onclick="joinGame()">KIRISH</button>
+    </div>
+</div>
+
+<!-- DM NOTIFICATION -->
+<div id="dm-overlay">
+    <div style="font-weight:bold; font-size:0.9rem;" id="dm-from">📩 SHAXSIY XABAR</div>
+    <div style="margin-top:5px; font-size:1rem;" id="dm-text"></div>
+    <button onclick="document.getElementById('dm-overlay').style.display='none'" style="margin-top:10px; background:#000; color:#fff; padding:4px 10px;">YOPISH</button>
+</div>
+
 <header>
     <div class="case-title" id="case-title">JINOIY ISH #001</div>
+    <div style="font-size:0.8rem; color:#00ffaa;" id="my-nick-display"></div>
 </header>
 
-<!-- Mobil Tugmalar -->
 <div class="mobile-tabs">
     <button class="tab-btn active" onclick="switchTab('evidences', this)">📁 DALILLAR</button>
     <button class="tab-btn" onclick="switchTab('terminal', this)">💻 TERMINAL</button>
@@ -54,13 +84,11 @@
 </div>
 
 <div class="main-container">
-    <!-- DALILLAR -->
     <div class="panel active-panel" id="panel-evidences">
         <h2 style="color:#d4af37; font-size:1rem; margin-bottom:10px;">DALILLAR ARXIVI</h2>
         <div id="evidence-list"></div>
     </div>
 
-    <!-- TERMINAL -->
     <div class="panel" id="panel-terminal">
         <h2 style="color:#00ffaa; font-size:1rem; margin-bottom:10px;">TERMINAL OS</h2>
         <div class="terminal-box" id="terminal-screen"><div>[Tizim Tayyor] 'help' deb yozing.</div></div>
@@ -69,7 +97,6 @@
         </div>
     </div>
 
-    <!-- CHAT -->
     <div class="panel" id="panel-chat">
         <h2 style="color:#ff003c; font-size:1rem; margin-bottom:10px;">TERGOV CHATI</h2>
         <div class="chat-box" id="chat-box"></div>
@@ -82,8 +109,18 @@
 
 <script>
     const socket = io();
+    let myNickname = '';
 
-    // Mobil Tab O'tkazish
+    function joinGame() {
+        const nick = document.getElementById('player-nick-input').value.trim();
+        if(nick) {
+            myNickname = nick;
+            socket.emit('register_player', myNickname);
+            document.getElementById('nick-overlay').style.display = 'none';
+            document.getElementById('my-nick-display').innerText = `👤 ${myNickname}`;
+        }
+    }
+
     function switchTab(tabName, btn) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -91,17 +128,21 @@
         btn.classList.add('active');
     }
 
-    // Serverdan Barcha Tarixni Yuklash (Qayta kirganda)
     socket.on('init_state', (state) => {
         document.getElementById('case-title').innerText = state.title;
         document.getElementById('evidence-list').innerHTML = '';
         document.getElementById('chat-box').innerHTML = '';
-
         state.evidences.forEach(renderEvidence);
         state.messages.forEach(renderMessage);
     });
 
-    // Chat
+    // Private Message
+    socket.on('private_message', (data) => {
+        document.getElementById('dm-from').innerText = `📩 ${data.from}`;
+        document.getElementById('dm-text').innerText = data.text;
+        document.getElementById('dm-overlay').style.display = 'block';
+    });
+
     function sendChat() {
         const input = document.getElementById('chat-input');
         if(input.value.trim()) {
@@ -117,7 +158,6 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Terminal
     document.getElementById('cmd-input').addEventListener('keypress', (e) => {
         if(e.key==='Enter') {
             socket.emit('run_command', e.target.value);
@@ -130,14 +170,12 @@
         term.scrollTop = term.scrollHeight;
     });
 
-    // Dalil Renderlash
     socket.on('new_evidence', renderEvidence);
     function renderEvidence(e) {
         const list = document.getElementById('evidence-list');
         let mediaHtml = '';
         if(e.image) mediaHtml += `<img src="${e.image}">`;
-        if(e.audio) mediaHtml += `<audio controls src="${e.audio}"></audio>`;
-
+        
         const html = `<div class="evidence-card">
             <strong style="color:#ff003c">${e.title}</strong>
             <p style="color:#ccc; font-size:0.85rem; margin-top:4px;">${e.desc}</p>
@@ -146,7 +184,6 @@
         list.insertAdjacentHTML('afterbegin', html);
     }
 
-    // Yangi Jinoyat Boshlanganda Tozalash
     socket.on('reset_game', (state) => {
         document.getElementById('case-title').innerText = state.title;
         document.getElementById('evidence-list').innerHTML = '';
