@@ -2,128 +2,156 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tenebris UZ — Tergov Platformasi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tenebris UZ — Dynamic Forensics</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; }
-        body { background: #050608; color: #00ffaa; display: flex; flex-direction: column; height: 100vh; }
+        body { background: #030508; color: #00ffaa; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Neon Grafika va Header */
+        header { background: #090d14; padding: 12px; border-bottom: 2px solid #ff003c; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 15px rgba(255,0,60,0.3); }
+        .case-title { font-size: 0.9rem; color: #ff003c; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
         
-        header { background: #0e1217; padding: 15px; border-bottom: 2px solid #ff003c; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.4rem; color: #fff; font-weight: bold; text-shadow: 0 0 8px #ff003c; }
-        .timer { font-size: 1.3rem; color: #ff003c; font-weight: bold; border: 1px solid #ff003c; padding: 4px 12px; }
+        /* Mobile Navigation Tabs */
+        .mobile-tabs { display: flex; background: #0a0e17; border-bottom: 1px solid #1f2937; }
+        .tab-btn { flex: 1; padding: 10px; background: none; border: none; color: #6b7280; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
+        .tab-btn.active { color: #00ffaa; border-bottom: 2px solid #00ffaa; background: #111827; }
 
-        .main-container { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px; padding: 10px; flex: 1; overflow: hidden; }
-        
-        .panel { background: #0a0d12; border: 1px solid #1f2937; padding: 15px; display: flex; flex-direction: column; border-radius: 4px; }
-        .panel h2 { color: #d4af37; font-size: 1.1rem; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .main-container { flex: 1; display: flex; position: relative; overflow: hidden; }
+        .panel { flex: 1; background: #06090e; padding: 15px; display: none; flex-direction: column; overflow-y: auto; }
+        .panel.active-panel { display: flex; }
 
-        /* Dalillar Paneli */
-        .evidence-list { flex: 1; overflow-y: auto; }
-        .evidence-item { background: #12161f; border-left: 3px solid #ff003c; padding: 10px; margin-bottom: 10px; font-size: 0.85rem; color: #ccc; }
+        /* Desktop Grid Screen */
+        @media (min-width: 768px) {
+            .mobile-tabs { display: none; }
+            .panel { display: flex !important; border-right: 1px solid #111827; }
+        }
 
-        /* Terminal */
-        .terminal-screen { flex: 1; background: #000; border: 1px solid #00ffaa; padding: 10px; overflow-y: auto; font-size: 0.85rem; margin-bottom: 10px; }
-        .terminal-input { display: flex; }
-        .terminal-input input { flex: 1; background: #111; border: 1px solid #00ffaa; color: #00ffaa; padding: 8px; outline: none; }
+        /* Glassmorphism Cards */
+        .evidence-card { background: rgba(18, 24, 38, 0.8); border: 1px solid #1f2937; border-left: 4px solid #ff003c; padding: 12px; margin-bottom: 12px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .evidence-card img { width: 100%; max-height: 200px; object-fit: cover; margin-top: 8px; border-radius: 4px; border: 1px solid #333; }
+        .evidence-card audio { width: 100%; margin-top: 8px; }
 
-        /* Chat */
-        .chat-box { flex: 1; background: #030406; border: 1px solid #222; padding: 10px; overflow-y: auto; font-size: 0.85rem; margin-bottom: 10px; }
-        .chat-msg { margin-bottom: 8px; }
-        .chat-msg .user { color: #d4af37; font-weight: bold; }
-        .chat-msg.admin .user { color: #ff003c; }
-        .chat-input { display: flex; gap: 5px; }
-        .chat-input input { flex: 1; background: #111; border: 1px solid #333; color: #fff; padding: 8px; outline: none; }
-        .chat-input button { background: #ff003c; color: #fff; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; }
+        /* Terminal & Chat */
+        .terminal-box, .chat-box { flex: 1; background: #000; border: 1px solid #111827; padding: 10px; overflow-y: auto; font-size: 0.85rem; margin-bottom: 10px; border-radius: 4px; }
+        .input-row { display: flex; gap: 5px; }
+        input { flex: 1; background: #0d131d; border: 1px solid #1f2937; color: #fff; padding: 10px; border-radius: 4px; outline: none; }
+        button { background: #ff003c; color: #fff; border: none; padding: 10px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">TENEBRIS // ARG TERMINAL</div>
-    <div class="timer" id="timer">48:00:00</div>
+    <div class="case-title" id="case-title">JINOIY ISH #001</div>
 </header>
 
+<!-- Mobil Tugmalar -->
+<div class="mobile-tabs">
+    <button class="tab-btn active" onclick="switchTab('evidences', this)">📁 DALILLAR</button>
+    <button class="tab-btn" onclick="switchTab('terminal', this)">💻 TERMINAL</button>
+    <button class="tab-btn" onclick="switchTab('chat', this)">💬 CHAT</button>
+</div>
+
 <div class="main-container">
-    <!-- 1. DALILLAR ARXIVI -->
-    <div class="panel">
-        <h2>📁 OCHILGAN DALILLAR</h2>
-        <div class="evidence-list" id="evidence-list">
-            <div class="evidence-item">
-                <strong>DALIL #001:</strong> Jasur Rahimovning o'limi bo'yicha ilkinchi ekspertiza xulosasi platformaga yuklandi.
-            </div>
+    <!-- DALILLAR -->
+    <div class="panel active-panel" id="panel-evidences">
+        <h2 style="color:#d4af37; font-size:1rem; margin-bottom:10px;">DALILLAR ARXIVI</h2>
+        <div id="evidence-list"></div>
+    </div>
+
+    <!-- TERMINAL -->
+    <div class="panel" id="panel-terminal">
+        <h2 style="color:#00ffaa; font-size:1rem; margin-bottom:10px;">TERMINAL OS</h2>
+        <div class="terminal-box" id="terminal-screen"><div>[Tizim Tayyor] 'help' deb yozing.</div></div>
+        <div class="input-row">
+            <input type="text" id="cmd-input" placeholder="Buyruq kiriting...">
         </div>
     </div>
 
-    <!-- 2. INTERAKTIV TERMINAL -->
-    <div class="panel">
-        <h2>💻 FORENZIKA TERMINALI</h2>
-        <div class="terminal-screen" id="terminal-screen">
-            <div>[Tenebris OS v2.4 Init Success]</div>
-            <div>Tizim buyruqlarini kiritish uchun 'help' yozing.</div>
-        </div>
-        <div class="terminal-input">
-            <input type="text" id="cmd-input" placeholder="Buyruqni kiriting...">
-        </div>
-    </div>
-
-    <!-- 3. LIVE GENERAL CHAT -->
-    <div class="panel">
-        <h2>💬 TERGOVCHILAR CHATI</h2>
+    <!-- CHAT -->
+    <div class="panel" id="panel-chat">
+        <h2 style="color:#ff003c; font-size:1rem; margin-bottom:10px;">TERGOV CHATI</h2>
         <div class="chat-box" id="chat-box"></div>
-        <div class="chat-input">
-            <input type="text" id="chat-msg-input" placeholder="Fikringizni yozing...">
-            <button onclick="sendMessage()">YUBORISH</button>
+        <div class="input-row">
+            <input type="text" id="chat-input" placeholder="Fikr bildirish...">
+            <button onclick="sendChat()">YUBORISH</button>
         </div>
     </div>
 </div>
 
 <script>
     const socket = io();
-    const chatBox = document.getElementById('chat-box');
-    const terminalScreen = document.getElementById('terminal-screen');
-    const evidenceList = document.getElementById('evidence-list');
 
-    // Chat Xabarini Yuborish
-    function sendMessage() {
-        const input = document.getElementById('chat-msg-input');
-        if (input.value.trim() !== '') {
+    // Mobil Tab O'tkazish
+    function switchTab(tabName, btn) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`panel-${tabName}`).classList.add('active-panel');
+        btn.classList.add('active');
+    }
+
+    // Serverdan Barcha Tarixni Yuklash (Qayta kirganda)
+    socket.on('init_state', (state) => {
+        document.getElementById('case-title').innerText = state.title;
+        document.getElementById('evidence-list').innerHTML = '';
+        document.getElementById('chat-box').innerHTML = '';
+
+        state.evidences.forEach(renderEvidence);
+        state.messages.forEach(renderMessage);
+    });
+
+    // Chat
+    function sendChat() {
+        const input = document.getElementById('chat-input');
+        if(input.value.trim()) {
             socket.emit('send_message', { text: input.value });
             input.value = '';
         }
     }
 
-    // Serverdan yangi xabarni qabul qilish
-    socket.on('new_message', (data) => {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-msg ${data.role}`;
-        msgDiv.innerHTML = `<span class="user">[${data.time}] ${data.user}:</span> ${data.text}`;
-        chatBox.appendChild(msgDiv);
+    socket.on('new_message', renderMessage);
+    function renderMessage(data) {
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML += `<div style="margin-bottom:8px;"><strong style="color:${data.role==='admin'?'#ff003c':'#d4af37'}">${data.user}:</strong> ${data.text}</div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
-    });
+    }
 
-    // Terminal Buyrug'i Yuborish
+    // Terminal
     document.getElementById('cmd-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const cmd = e.target.value;
-            socket.emit('run_command', cmd);
+        if(e.key==='Enter') {
+            socket.emit('run_command', e.target.value);
             e.target.value = '';
         }
     });
-
     socket.on('command_response', (data) => {
-        terminalScreen.innerHTML += `<div><span style="color:#d4af37;">> ${data.cmd}</span></div>`;
-        terminalScreen.innerHTML += `<div>${data.response}</div>`;
-        terminalScreen.scrollTop = terminalScreen.scrollHeight;
+        const term = document.getElementById('terminal-screen');
+        term.innerHTML += `<div>> ${data.cmd}</div><div style="color:#aaa;">${data.response}</div>`;
+        term.scrollTop = term.scrollHeight;
     });
 
-    // Yangi Dalil Chiqqanda
-    socket.on('new_evidence', (evidence) => {
-        const div = document.createElement('div');
-        div.className = 'evidence-item';
-        div.innerHTML = `<strong>${evidence.title}:</strong> ${evidence.desc}`;
-        evidenceList.prepend(div);
-        alert("🚨 YANGI DALIL TAQDIM ETILDI!");
+    // Dalil Renderlash
+    socket.on('new_evidence', renderEvidence);
+    function renderEvidence(e) {
+        const list = document.getElementById('evidence-list');
+        let mediaHtml = '';
+        if(e.image) mediaHtml += `<img src="${e.image}">`;
+        if(e.audio) mediaHtml += `<audio controls src="${e.audio}"></audio>`;
+
+        const html = `<div class="evidence-card">
+            <strong style="color:#ff003c">${e.title}</strong>
+            <p style="color:#ccc; font-size:0.85rem; margin-top:4px;">${e.desc}</p>
+            ${mediaHtml}
+        </div>`;
+        list.insertAdjacentHTML('afterbegin', html);
+    }
+
+    // Yangi Jinoyat Boshlanganda Tozalash
+    socket.on('reset_game', (state) => {
+        document.getElementById('case-title').innerText = state.title;
+        document.getElementById('evidence-list').innerHTML = '';
+        document.getElementById('chat-box').innerHTML = '';
+        alert("🚨 YANGI JINOIY ISH BOSHLANDI!");
     });
 </script>
 
