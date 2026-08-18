@@ -1,118 +1,102 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server);
 
-// Rasm fayllarini (Base64) qabul qilish uchun hajmni 50MB ga oshiramiz
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(express.static('public'));
 
-const io = new Server(server, { 
-    cors: { origin: "*" },
-    maxHttpBufferSize: 1e8 // Large file buffer
-});
+// mmconst ADMIN_EMAIL = "javohirjon0508@gmail.com";
 
-let gameState = {
-    title: 'JINOIY ISH #001: TUNGI SOYALAR',
-    timerSeconds: 7200,
-    isTimerRunning: true,
-    dangerLevel: 15,
-    evidences: [],
-    messages: [],
-    terminalCommands: {
-        'ping 192.168.1.45': 'LOCAL_IP: Ulanish o\'rnatildi.',
-        'help': 'Mavjud buyruqlar: status, ping, logs, scan'
-    }
-};
+// Xotiradagi ma'lumotlar (Firebase / DB ga saqlash uchun tayyor struktura)
+let cases = [
+  {
+    id: 1,
+    level: 1,
+    title: "1-JINOYAT ISHI: Birinchi iz",
+    desc: "Shahar serverida shubhali harakatlar kuzatildi. Maxfiy kodni toping.",
+    answer: "1234",
+    image: ""
+  }
+];
 
-// Onlayn o'yinchilar bazasi { socketId: nickname }
-let activePlayers = {};
-
-setInterval(() => {
-    if (gameState.isTimerRunning && gameState.timerSeconds > 0) {
-        gameState.timerSeconds--;
-        io.emit('timer_update', { seconds: gameState.timerSeconds, isRunning: gameState.isTimerRunning });
-    }
-}, 1000);
+let players = {};
 
 io.on('connection', (socket) => {
-    // 1. O'yinchi Nickname bilan ro'yxatdan o'tishi
-    socket.on('register_player', (nickname) => {
-        const cleanNick = nickname ? nickname.trim() : 'Anonim_' + socket.id.substr(0,4);
-        activePlayers[socket.id] = cleanNick;
-        
-        // O'yinchiga xush kelibsiz ma'lumoti
-        socket.emit('init_state', gameState);
-        
-        // Admin pultiga onlayn o'yinchilar ro'yxatini yangilab yuborish
-        io.emit('update_online_players', activePlayers);
+
+  // O'yinchi kurganda (Google Auth ma'lumotlari bilan)
+  socket.on('player-login', (userData) => {
+    const isAdmin = (userData.email === ADMIN_EMAIL);
+    players[socket.id] = {
+      id: socket.id,
+      uid: userData.uid,
+      name: userData.displayName || "Detektiv",
+      email: userData.email,
+      photo: userData.photoURL,
+      level: userData.level || 1,
+      isAdmin: isAdmin
+    };
+
+    socket.emit('auth-success', {
+      user: players[socket.id],
+      cases: getAvailableCases(players[socket.id].level)
     });
 
-    // 2. Chat
-    socket.on('send_message', (data) => {
-        const msg = {
-            user: activePlayers[socket.id] || data.user || 'Anonim',
-            text: data.text,
-            time: new Date().toLocaleTimeString(),
-            role: data.role || 'player'
-        };
-        gameState.messages.push(msg);
-        io.emit('new_message', msg);
-    });
+    io.emit('update-players', Object.values(players));
+  });
 
-    // 3. Admin: Shaxsiy Xabar Yuborish (Private DM)
-    socket.on('admin_send_private_msg', (data) => {
-        // targetSocketId bo'yicha faqat bitta o'yinchiga yuborish
-        io.to(data.targetSocketId).emit('private_message', {
-            from: data.from || 'ADMIN (MAXFIY BIRIKTIRMA)',
-            text: data.text
-        });
-    });
+  // Level bo'yicha ochiq jinoyatlarni olish
+  function getAvailableCases(playerLevel) {
+    return cases.filter(c => c.level <= playerLevel);
+  }
 
-    // 4. Admin: Rasm / Media Dalil Yuborish
-    socket.on('admin_release_evidence', (evidence) => {
-        gameState.evidences.push(evidence);
-        io.emit('new_evidence', evidence);
-    });
+  // Javobni tekshirish
+  socket.on('submit-answer', ({ caseId, answer }) => {
+    const player = players[socket.id];
+    const currentCase = cases.find(c => c.id === caseId);
 
-    // 5. Terminal
-    socket.on('run_command', (cmd) => {
-        const cleanCmd = cmd.toLowerCase().trim();
-        const response = gameState.terminalCommands[cleanCmd] || "BUYRUQ TANIQSIZ. 'help' deb yozing.";
-        socket.emit('command_response', { cmd, response });
-        io.emit('admin_terminal_log', { user: activePlayers[socket.id], cmd });
-    });
+    if (currentCase && currentCase.answer.trim().toLowerCase() === answer.trim().toLowerCase()) {
+      if (player.level <= currentCase.level) {
+        player.level += 1;
+      }
+      socket.emit('answer-result', {
+        success: true,
+        newLevel: player.level,
+        cases: getAvailableCases(player.level)
+      });
+      io.emit('update-players', Object.values(players));
+    } else {
+      socket.emit('answer-result', { success: false, message: "Kiritilgan kod xato!" });
+    }
+  });
 
-    // 6. Admin Taymer & Danger
-    socket.on('admin_control_timer', (data) => {
-        if (data.action === 'toggle') gameState.isTimerRunning = !gameState.isTimerRunning;
-        if (data.action === 'add') gameState.timerSeconds += data.seconds;
-        io.emit('timer_update', { seconds: gameState.timerSeconds, isRunning: gameState.isTimerRunning });
-    });
+  // ADMIN: Yangi jinoyat ishini qo'shish
+  socket.on('add-case', (caseData) => {
+    const player = players[socket.id];
+    if (player && player.isAdmin) {
+      const newCase = {
+        id: cases.length + 1,
+        level: parseInt(caseData.level),
+        title: caseData.title,
+        desc: caseData.desc,
+        answer: caseData.answer,
+        image: caseData.image || ""
+      };
+      cases.push(newCase);
+      io.emit('cases-updated');
+    }
+  });
 
-    socket.on('admin_set_danger', (level) => {
-        gameState.dangerLevel = level;
-        io.emit('danger_update', level);
-    });
-
-    socket.on('admin_start_new_case', (data) => {
-        gameState.title = data.title;
-        gameState.timerSeconds = data.seconds || 7200;
-        gameState.evidences = [];
-        gameState.messages = [];
-        io.emit('reset_game', gameState);
-    });
-
-    // O'yinchi chiqqanda
-    socket.on('disconnect', () => {
-        delete activePlayers[socket.id];
-        io.emit('update_online_players', activePlayers);
-    });
+  socket.on('disconnect', () => {
+    delete players[socket.id];
+    io.emit('update-players', Object.values(players));
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server ishlamoqda: http://localhost:${PORT}`);
+});
