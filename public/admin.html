@@ -3,107 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tenebris-Detektiv | Admin Panel</title>
-
+    <title>TENEBRIS // ADMIN DASHBOARD</title>
+    
+    <!-- Firebase SDK (v8.10.1) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: #0b0e14;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-        }
-        .admin-box {
-            max-width: 550px;
-            width: 100%;
-            background: #121721;
-            border: 1px solid #1e2638;
-            padding: 25px;
-            border-radius: 12px;
-        }
-        h2 { color: #ff0055; margin-bottom: 20px; border-bottom: 1px solid #1e2638; padding-bottom: 10px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 0.85rem; color: #00f0ff; margin-bottom: 5px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #02050a; color: #d1d5db; font-family: 'Segoe UI', monospace; padding: 20px; }
+        
+        h1, h2 { color: #ff0055; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+        
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        
+        .panel { background: #090e17; border: 1px solid #ff0055; padding: 20px; border-radius: 6px; }
+        
+        label { display: block; font-size: 0.8rem; margin: 10px 0 5px; color: #00f0ff; }
         input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            background: #0b0e14;
-            border: 1px solid #1e2638;
-            border-radius: 8px;
-            color: #fff;
-            box-sizing: border-box;
-            outline: none;
+            width: 100%; background: #02050a; border: 1px solid #1a2638; color: #fff; padding: 10px; border-radius: 4px; outline: none;
         }
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: #ff0055;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 10px;
+        input:focus, textarea:focus { border-color: #ff0055; }
+        
+        button {
+            background: #ff0055; color: #fff; border: none; padding: 10px 20px; margin-top: 15px; cursor: pointer;
+            font-weight: bold; border-radius: 4px; transition: 0.2s; width: 100%;
         }
-        .btn-submit:hover { background: #d60047; }
-        #auth-gate { text-align: center; padding: 40px 0; }
-        .google-btn { background: #f4c430; color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #d00045; box-shadow: 0 0 10px rgba(255, 0, 85, 0.4); }
+        
+        .table-box { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+        .table-box th, .table-box td { border: 1px solid #1a2638; padding: 8px; text-align: left; }
+        .table-box th { background: #0f172a; color: #00f0ff; }
+        
+        .btn-sm { padding: 4px 8px; font-size: 0.75rem; margin-top: 0; width: auto; }
+        .btn-del { background: #e11d48; }
     </style>
 </head>
 <body>
 
-<div class="admin-box">
-    <!-- AUTH TEKSHIRUV EKRANI -->
-    <div id="auth-gate">
-        <h3 style="color: #00f0ff;">⚙️ ADMIN PANELGA KIRISH</h3>
-        <p style="color: #8a99ad; font-size: 0.9rem;">Boshqaruv paneliga kirish uchun Admin Google hisobingizdan foydalaning.</p>
-        <button class="google-btn" onclick="loginAdmin()">G Google orqali tasdiqlash</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1><i class="fa-solid fa-user-gear"></i> Tenebris // System Admin</h1>
+        <a href="/" style="color: #00f0ff; text-decoration: none;"><i class="fa-solid fa-desktop"></i> Desktop OS ga qaytish</a>
     </div>
 
-    <!-- MAIN ADMIN FORM -->
-    <div id="admin-content" style="display: none;">
-        <h2>⚙️ YANGI TERGOV ISHI YARATISH</h2>
+    <div class="container">
+        <!-- 1. YANGI CASE QO'SHISH -->
+        <div class="panel">
+            <h2><i class="fa-solid fa-folder-plus"></i> Yangi Case Yaratish</h2>
+            <form id="create-case-form">
+                <label>Case ID / Nomeri (Masalan: case_01)</label>
+                <input type="text" id="case-id" required placeholder="case_01">
 
-        <div class="form-group">
-            <label>O'yinchi Darajasi (Level)</label>
-            <input type="number" id="adm-level" value="1">
+                <label>Mavzu / Nomi</label>
+                <input type="text" id="case-title" required placeholder="Operation Redline">
+
+                <label>Talab qilinadigan Level</label>
+                <input type="number" id="case-level" value="1" min="1" required>
+
+                <label>Tavsif / Vazifa matni</label>
+                <textarea id="case-desc" rows="4" required placeholder="Faylni ochish uchun parolni toping..."></textarea>
+
+                <label>To'g'ri Javob / Parol</label>
+                <input type="text" id="case-answer" required placeholder="SECRET123">
+
+                <button type="submit"><i class="fa-solid fa-plus"></i> Case Qo'shish</button>
+            </form>
         </div>
 
-        <div class="form-group">
-            <label>Jinoyat Ishi Sarlavhasi</label>
-            <input type="text" id="adm-title" placeholder="Masalan: 001-SONLI ISH: Tun qorong'usi">
-        </div>
+        <!-- 2. SYSTEM CHATGA XABAR YUBORISH (COMMS) -->
+        <div class="panel">
+            <h2><i class="fa-solid fa-satellite-dish"></i> HQ Comms Broadcast</h2>
+            <label>Operatordan bildirishnoma yuborish:</label>
+            <textarea id="admin-msg" rows="3" placeholder="Barcha detektiflarga diqqat..."></textarea>
+            <button onclick="sendGlobalMsg()"><i class="fa-solid fa-paper-plane"></i> Xabarni Yuborish</button>
 
-        <div class="form-group">
-            <label>Kategoriya</label>
-            <input type="text" id="adm-category" placeholder="Qotillik / O'g'rilik / Kiber-jinoyat">
+            <h2 style="margin-top: 25px;"><i class="fa-solid fa-users"></i> Detektivlar ro'yxati</h2>
+            <table class="table-box">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>LVL</th>
+                        <th>Boshqaruv</th>
+                    </tr>
+                </thead>
+                <tbody id="users-list">
+                    <!-- Socket orqali dinamik yuklanadi -->
+                </tbody>
+            </table>
         </div>
-
-        <div class="form-group">
-            <label>Hodisa Joyi Tafsilotlari (Overview)</label>
-            <textarea id="adm-desc" rows="4" placeholder="Voqea sodir bo'lgan joy, vaqt va birinchi belgilar..."></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Asosiy Gumondor Ismi / ID si</label>
-            <input type="text" id="adm-suspect" placeholder="Masalan: Jasur Komilov (susp_1)">
-        </div>
-
-        <div class="form-group">
-            <label>To'g'ri Kalit So'z / Parol / Masalani Yechimi</label>
-            <input type="text" id="adm-answer" placeholder="Masalan: susp_1 yoki pichoq">
-        </div>
-
-        <button class="btn-submit" onclick="publishCase()">CHOP ETISH (PUBLISH)</button>
     </div>
-</div>
+
+    <!-- 3. MAVJUD CASE-LAR RO'YXATI -->
+    <div class="panel" style="margin-top: 20px;">
+        <h2><i class="fa-solid fa-list-check"></i> Barcha Active Case-lar</h2>
+        <table class="table-box">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Level</th>
+                    <th>Nomi</th>
+                    <th>Parol</th>
+                    <th>Amallar</th>
+                </tr>
+            </thead>
+            <tbody id="admin-cases-list">
+                <!-- Cases shu yerda ko'rinadi -->
+            </tbody>
+        </table>
+    </div>
 
 <script>
     const firebaseConfig = {
@@ -112,60 +127,96 @@
         projectId: "web-ilova",
         storageBucket: "web-ilova.firebasestorage.app",
         messagingSenderId: "222468122005",
-        appId: "1:222468122005:web:7443bbd80aaf95634d829c",
-        measurementId: "G-TFCS0P7416"
+        appId: "1:222468122005:web:7443bbd80aaf95634d829c"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    
+    const db = firebase.firestore();
     const socket = typeof io !== 'undefined' ? io() : null;
 
-    function loginAdmin() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(err => alert("Xato: " + err.message));
-    }
-
-    auth.onAuthStateChanged((user) => {
-        if (user && socket) {
-            socket.emit('player-login', {
-                uid: user.uid,
-                displayName: user.displayName,
-                email: user.email,
-                photoURL: user.photoURL
-            });
-        }
-    });
-
+    // Node.js Backend bilan admin kanali orqali ulanish
     if (socket) {
-        socket.on('auth-success', ({ user }) => {
-            if (user.isAdmin) {
-                document.getElementById('auth-gate').style.display = 'none';
-                document.getElementById('admin-content').style.display = 'block';
-            } else {
-                alert("RUXSAT BERILMAGAN! Siz Admin emassiz.");
-                window.location.href = "/";
-            }
+        socket.emit('admin-init');
+
+        // Barcha foydalanuvchilarni olish
+        socket.on('admin-users-data', (users) => {
+            const list = document.getElementById('users-list');
+            list.innerHTML = '';
+            users.forEach(u => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${u.displayName || 'Anonim'}</td>
+                        <td>LVL ${u.level || 1}</td>
+                        <td>
+                            <button class="btn-sm" onclick="changeUserLevel('${u.uid}', ${(u.level || 1) + 1})">+1 Level</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+
+        // Barcha Case-larni ko'rish
+        socket.on('admin-cases-data', (cases) => {
+            const list = document.getElementById('admin-cases-list');
+            list.innerHTML = '';
+            cases.forEach(c => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${c.id}</td>
+                        <td>${c.level}</td>
+                        <td>${c.title}</td>
+                        <td style="color: #00f0ff;">${c.answer}</td>
+                        <td>
+                            <button class="btn-sm btn-del" onclick="deleteCase('${c.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
         });
     }
 
-    function publishCase() {
-        const level = document.getElementById('adm-level').value;
-        const title = document.getElementById('adm-title').value;
-        const category = document.getElementById('adm-category').value;
-        const desc = document.getElementById('adm-desc').value;
-        const suspect = document.getElementById('adm-suspect').value;
-        const answer = document.getElementById('adm-answer').value;
+    // 1. Yangi Case Qo'shish
+    document.getElementById('create-case-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const caseData = {
+            id: document.getElementById('case-id').value,
+            title: document.getElementById('case-title').value,
+            level: parseInt(document.getElementById('case-level').value),
+            desc: document.getElementById('case-desc').value,
+            answer: document.getElementById('case-answer').value,
+            createdAt: new Date().toISOString()
+        };
 
-        if (title && desc && answer && socket) {
-            socket.emit('add-case', { level, title, category, desc, suspect, answer });
-            alert("Yangi jinoyat ishi muvaffaqiyatli chop etildi!");
-            document.getElementById('adm-title').value = '';
-            document.getElementById('adm-category').value = '';
-            document.getElementById('adm-desc').value = '';
-            document.getElementById('adm-suspect').value = '';
-            document.getElementById('adm-answer').value = '';
-        } else {
-            alert("Iltimos, barcha maydonlarni to'ldiring!");
+        if (socket) {
+            socket.emit('admin-create-case', caseData);
+            alert("Yangi Case muvaffaqiyatli qo'shildi!");
+            e.target.reset();
+        }
+    });
+
+    // 2. Global bildirishnoma yuborish
+    function sendGlobalMsg() {
+        const msg = document.getElementById('admin-msg').value;
+        if (msg && socket) {
+            socket.emit('admin-broadcast-msg', { text: msg });
+            alert("Xabar barcha foydalanuvchilar ekraniga yuborildi!");
+            document.getElementById('admin-msg').value = '';
+        }
+    }
+
+    // 3. Caseni o'chirish
+    function deleteCase(caseId) {
+        if (confirm(`Rostdan ham ${caseId} ni o'chirmoqchimisiz?`) && socket) {
+            socket.emit('admin-delete-case', { id: caseId });
+        }
+    }
+
+    // 4. Foydalanuvchi darajasini o'zgartirish
+    function changeUserLevel(uid, newLevel) {
+        if (socket) {
+            socket.emit('admin-update-user-level', { uid, level: newLevel });
         }
     }
 </script>
