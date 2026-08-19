@@ -8,12 +8,12 @@
     <!-- Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
 
-    <!-- Firebase SDK (Barqaror v8 versiyasi) -->
-    <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js)"></script>
+    <!-- Firebase SDK (v8.10.1 Barqaror) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <!-- FontAwesome Font -->
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -27,7 +27,6 @@
             flex-direction: column;
         }
 
-        /* TOP NAVIGATION BAR */
         .top-bar {
             height: 38px;
             background: #080d16;
@@ -42,7 +41,6 @@
         .top-bar .user-profile { display: flex; align-items: center; gap: 10px; }
         .u-avatar { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #00f0ff; }
 
-        /* WORKSPACE DESKTOP AREA */
         .desktop {
             flex: 1;
             position: relative;
@@ -52,7 +50,6 @@
             background: radial-gradient(circle at center, #0a101d 0%, #02050a 100%);
         }
 
-        /* ICON GRID ON DESKTOP */
         .desktop-icons {
             display: flex;
             flex-direction: column;
@@ -73,7 +70,6 @@
         .app-icon i { font-size: 1.8rem; color: #00f0ff; }
         .app-icon:hover { color: #fff; transform: scale(1.05); }
 
-        /* WINDOW INTERFACE SYSTEM */
         .os-window {
             position: absolute;
             background: #090e17;
@@ -104,7 +100,6 @@
 
         .win-body { padding: 15px; flex: 1; overflow-y: auto; }
 
-        /* FILE EXPLORER INSIDE WINDOW */
         .file-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
@@ -127,7 +122,6 @@
         .folder-card i { font-size: 2rem; color: #f59e0b; }
         .folder-card:hover { border-color: #00f0ff; background: #131f33; }
 
-        /* CHAT / AGENT PANEL */
         .chat-box {
             display: flex;
             flex-direction: column;
@@ -142,7 +136,6 @@
             border-left: 3px solid #00f0ff;
         }
 
-        /* BOTTOM TASKBAR */
         .taskbar {
             height: 40px;
             background: #080d16;
@@ -164,7 +157,6 @@
             gap: 6px;
         }
 
-        /* AUTH CONTAINER */
         #auth-overlay {
             position: absolute;
             inset: 0;
@@ -198,7 +190,6 @@
 </head>
 <body>
 
-    <!-- AUTH SCREEN OVERLAY -->
     <div id="auth-overlay">
         <div class="login-card">
             <h2 style="color: #00f0ff; margin-bottom: 10px;"><i class="fa-solid fa-user-secret"></i> DETECTIVE OS</h2>
@@ -207,19 +198,16 @@
         </div>
     </div>
 
-    <!-- TOP HEADER BAR -->
     <div class="top-bar">
         <div class="brand"><i class="fa-solid fa-shield-halved"></i> TENEBRIS // SYSTEM v2.4</div>
         <div class="user-profile">
-            <img id="u-avatar" class="u-avatar" src="[https://via.placeholder.com/24](https://via.placeholder.com/24)">
+            <img id="u-avatar" class="u-avatar" src="https://via.placeholder.com/24">
             <span id="u-name" style="font-weight: bold; font-size: 0.8rem;">OFFLINE</span>
             <span id="u-level" style="color: #00f0ff; font-size: 0.75rem; background: rgba(0, 240, 255, 0.1); padding: 2px 6px; border-radius: 4px;">LVL 1</span>
         </div>
     </div>
 
-    <!-- DESKTOP WORKSPACE -->
     <div class="desktop">
-        <!-- DESKTOP SHORTCUTS -->
         <div class="desktop-icons">
             <div class="app-icon" onclick="openWindow('cases-win')">
                 <i class="fa-solid fa-folder-closed"></i>
@@ -237,20 +225,16 @@
             </a>
         </div>
 
-        <!-- WINDOW 1: CASE FILES (FILE EXPLORER) -->
         <div id="cases-win" class="os-window" style="width: 480px; top: 30px; left: 120px;">
             <div class="win-header">
                 <span><i class="fa-solid fa-folder-open"></i> FILE EXPLORER // ACTIVE CASES</span>
                 <div class="win-controls"><i class="fa-solid fa-xmark" onclick="closeWindow('cases-win')"></i></div>
             </div>
             <div class="win-body">
-                <div id="cases-list" class="file-grid">
-                    <!-- CASES POPULATE HERE -->
-                </div>
+                <div id="cases-list" class="file-grid"></div>
             </div>
         </div>
 
-        <!-- WINDOW 2: COMMS / CHAT WITH AGENT -->
         <div id="agent-win" class="os-window" style="width: 320px; top: 50px; right: 40px;">
             <div class="win-header">
                 <span><i class="fa-solid fa-headset"></i> HQ DIRECT COMMS</span>
@@ -267,7 +251,6 @@
         </div>
     </div>
 
-    <!-- BOTTOM TASKBAR -->
     <div class="taskbar">
         <div class="task-item"><i class="fa-solid fa-folder"></i> Active Cases</div>
         <div class="task-item"><i class="fa-solid fa-terminal"></i> Terminal Ready</div>
@@ -283,7 +266,7 @@
         appId: "1:222468122005:web:7443bbd80aaf95634d829c"
     };
 
-    // Firebase Initsializatsiya
+    // Firebase Initsializatsiyasi
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
@@ -292,28 +275,35 @@
 
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(err => {
-            console.error("Auth Error:", err);
-            alert("Kirishda xatolik: " + err.message);
-        });
+        auth.signInWithPopup(provider)
+            .then((result) => {
+                console.log("Firebase orqali muvaffaqiyatli kirildi:", result.user);
+            })
+            .catch(err => {
+                console.error("Auth Xatoligi:", err);
+                alert("Firebase kirish xatosi: " + err.message);
+            });
     }
 
     auth.onAuthStateChanged((user) => {
-        if (user && socket) {
-            socket.emit('player-login', {
-                uid: user.uid,
-                displayName: user.displayName,
-                email: user.email,
-                photoURL: user.photoURL,
-                level: parseInt(localStorage.getItem('p_level') || 1)
-            });
+        if (user) {
+            console.log("Foydalanuvchi tizimda:", user.displayName);
+            if (socket) {
+                socket.emit('player-login', {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    level: parseInt(localStorage.getItem('p_level') || 1)
+                });
+            }
         }
     });
 
     if (socket) {
         socket.on('auth-success', ({ user, cases }) => {
             document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('u-avatar').src = user.photo || '[https://via.placeholder.com/24](https://via.placeholder.com/24)';
+            document.getElementById('u-avatar').src = user.photo || 'https://via.placeholder.com/24';
             document.getElementById('u-name').innerText = (user.name || 'AGENT').toUpperCase();
             document.getElementById('u-level').innerText = `LVL ${user.level || 1}`;
 
@@ -340,4 +330,33 @@
         const container = document.getElementById('cases-list');
         container.innerHTML = '';
 
-        if (!cases || cases.length === 0)
+        if (!cases || cases.length === 0) {
+            container.innerHTML = '<p style="color: #64748b; font-size: 0.8rem; grid-column: span 3;">Papka bo\'sh.</p>';
+            return;
+        }
+
+        cases.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'folder-card';
+            card.onclick = () => openCaseDetail(c);
+            card.innerHTML = `
+                <i class="fa-solid fa-folder-closed"></i>
+                <div style="color: #fff; font-weight: bold;">[L-${c.level}]</div>
+                <div style="color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${c.title}</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function openCaseDetail(c) {
+        const inputCode = prompt(`${c.title}\n\n${c.desc}\n\nKodni kiriting:`);
+        if (inputCode && socket) {
+            socket.emit('submit-answer', { caseId: c.id, answer: inputCode });
+        }
+    }
+
+    function openWindow(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeWindow(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+</body>
+</html>
