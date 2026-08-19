@@ -9,9 +9,10 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static('public'));
 
-// mmconst ADMIN_EMAIL = "javohirjon0508@gmail.com";
+// ADMIN EMAIL (Izoh olib tashlandi va to'g'rilandi)
+const ADMIN_EMAIL = "javohirjon0508@gmail.com";
 
-// Xotiradagi ma'lumotlar (Firebase / DB ga saqlash uchun tayyor struktura)
+// Xotiradagi ma'lumotlar
 let cases = [
   {
     id: 1,
@@ -26,20 +27,25 @@ let cases = [
 let players = {};
 
 io.on('connection', (socket) => {
+  console.log('Detektiv ulandi:', socket.id);
 
-  // O'yinchi kurganda (Google Auth ma'lumotlari bilan)
+  // O'yinchi kirganda (Google Auth ma'lumotlari bilan)
   socket.on('player-login', (userData) => {
+    if (!userData || !userData.email) return;
+
     const isAdmin = (userData.email === ADMIN_EMAIL);
+    
     players[socket.id] = {
       id: socket.id,
       uid: userData.uid,
       name: userData.displayName || "Detektiv",
       email: userData.email,
-      photo: userData.photoURL,
+      photo: userData.photoURL || "https://via.placeholder.com/40",
       level: userData.level || 1,
       isAdmin: isAdmin
     };
 
+    // O'yinchiga muvaffaqiyatli kirganini va jinoyatlarni yuborish
     socket.emit('auth-success', {
       user: players[socket.id],
       cases: getAvailableCases(players[socket.id].level)
@@ -56,6 +62,8 @@ io.on('connection', (socket) => {
   // Javobni tekshirish
   socket.on('submit-answer', ({ caseId, answer }) => {
     const player = players[socket.id];
+    if (!player) return;
+
     const currentCase = cases.find(c => c.id === caseId);
 
     if (currentCase && currentCase.answer.trim().toLowerCase() === answer.trim().toLowerCase()) {
@@ -86,7 +94,14 @@ io.on('connection', (socket) => {
         image: caseData.image || ""
       };
       cases.push(newCase);
-      io.emit('cases-updated');
+      
+      // Yangi case qo'shilganda barcha o'yinchilarga yangilangan ro'yxatni yuborish
+      Object.keys(players).forEach(sId => {
+        io.to(sId).emit('auth-success', {
+          user: players[sId],
+          cases: getAvailableCases(players[sId].level)
+        });
+      });
     }
   });
 
