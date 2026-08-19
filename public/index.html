@@ -2,8 +2,14 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tenebris-Detektiv</title>
+
+    <!-- SOCKET.IO VA FIREBASE COMPAT SDK LARI -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -14,26 +20,28 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
         .login-container {
             text-align: center;
             max-width: 400px;
             padding: 20px;
+            width: 100%;
         }
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             letter-spacing: 2px;
             margin-bottom: 10px;
+            color: #00f0ff;
         }
         p {
             color: #a0aec0;
-            font-size: 1.1rem;
+            font-size: 1rem;
             line-height: 1.5;
             margin-bottom: 30px;
         }
         .google-btn {
-            background-color: #f4c430
+            background-color: #f4c430; /* Nuqta-vergul to'g'rilandi */
             color: #1a202c;
             border: none;
             padding: 15px 30px;
@@ -43,51 +51,102 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
+            width: 100%;
         }
         .google-btn:hover {
             background-color: #edf2f7;
             transform: translateY(-2px);
         }
+        .case-card {
+            background: #12151e;
+            border: 1px solid #1f293d;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+        .case-title { color: #00f0ff; font-size: 1.1rem; margin-bottom: 8px; }
+        .case-desc { font-size: 0.9rem; color: #94a3b8; margin-bottom: 12px; }
+        input[type="text"], textarea, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            background: #090a0f;
+            border: 1px solid #1f293d;
+            border-radius: 8px;
+            color: #fff;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            background: #00f0ff;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
+    <!-- AUTH EKRANI -->
+    <div id="auth-screen" class="login-container">
         <h1>🕵️‍♂️ TENEBRIS-DETEKTIV</h1>
         <p>Jinoyatlarni ochish va darajalarni oshirish uchun Google hisobingiz bilan kiring.</p>
-        <button class="google-btn" id="google-login-btn">G Google orqali kirish</button>
+        <!-- ONCLICK HODISASI QO'SHILDI -->
+        <button class="google-btn" id="google-login-btn" onclick="loginWithGoogle()">G Google orqali kirish</button>
     </div>
-<script type=''module''>
-    // Import the functions you need from the SDKs you need
-import { initializeApp,getAuth } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyALWGXz15GQslY6fJI8noiLbXKH-yCB1gI",
-  authDomain: "web-ilova.firebaseapp.com",
-  projectId: "web-ilova",
-  storageBucket: "web-ilova.firebasestorage.app",
-  messagingSenderId: "222468122005",
-  appId: "1:222468122005:web:7443bbd80aaf95634d829c",
-  measurementId: "G-TFCS0P7416"
-};
+    <!-- O'YIN EKRANI (Dastlab yashiringan) -->
+    <div id="game-screen" style="display: none; width: 100%; max-width: 480px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1f293d; padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="u-avatar" src="" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00f0ff;">
+                <div>
+                    <div id="u-name" style="font-weight: bold;">Detektiv</div>
+                    <span id="admin-tag" style="color: #ff0055; font-size: 0.8rem; display: none;">ADMIN</span>
+                </div>
+            </div>
+            <div id="u-level" style="background: rgba(0, 240, 255, 0.1); color: #00f0ff; border: 1px solid #00f0ff; padding: 4px 12px; border-radius: 12px; font-size: 0.9rem; font-weight: bold;">LEVEL 1</div>
+        </div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const socket = io();
+        <h3 style="color: #a0aec0; margin-bottom: 15px;">OCHIQ JINOYAT ISHLARI</h3>
+        <div id="cases-list"></div>
+
+        <!-- ADMIN PANEL -->
+        <div id="admin-panel" style="display: none; border-top: 2px dashed #ff0055; margin-top: 30px; padding-top: 20px;">
+            <h3 style="color: #ff0055; margin-bottom: 10px;">⚙️ ADMIN: YANGI JINOYAT QO'SHISH</h3>
+            <input type="number" id="adm-level" placeholder="Daraja (Level)" value="1">
+            <input type="text" id="adm-title" placeholder="Jinoyat sarlavhasi">
+            <textarea id="adm-desc" placeholder="Tavsif va topishmoq..."></textarea>
+            <input type="text" id="adm-answer" placeholder="To'g'ri javob / Parol">
+            <button class="btn-action" style="background: #ff0055; color: #fff;" onclick="addCase()">CHOP ETISH</button>
+        </div>
+    </div>
+
+<script>
+    // FIREBASE SOZLAMALARI
+    const firebaseConfig = {
+        apiKey: "AIzaSyALWGXz15GQslY6fJI8noiLbXKH-yCB1gI",
+        authDomain: "web-ilova.firebaseapp.com",
+        projectId: "web-ilova",
+        storageBucket: "web-ilova.firebasestorage.app",
+        messagingSenderId: "222468122005",
+        appId: "1:222468122005:web:7443bbd80aaf95634d829c",
+        measurementId: "G-TFCS0P7416"
+    };
+
+    // Firebase'ni ishga tushirish
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const socket = typeof io !== 'undefined' ? io() : null;
 
     let currentUser = null;
 
+    // GOOGLE ORQALI KIRISH FUNKSIYASI
     function loginWithGoogle() {
-        if (typeof firebase === 'undefined' || !firebase.auth) {
-            alert("Xatolik: Firebase kutubxonasi yuklanmagan!");
-            return;
-        }
-
         const provider = new firebase.auth.GoogleAuthProvider();
         
         auth.signInWithPopup(provider)
@@ -95,10 +154,11 @@ const firebaseConfig = {
                 alert("Muvaffaqiyatli kirildi: " + result.user.displayName);
             })
             .catch((error) => {
-                alert("GOOGLE AUTH XATOSI:\n\nKod: " + error.code + "\nXabar: " + error.message);
+                alert("GOOGLE AUTH XATOSI:\nKod: " + error.code + "\nXabar: " + error.message);
             });
     }
 
+    // FOYDALANUVCHI HOLATINI KUZATISH
     auth.onAuthStateChanged((user) => {
         if (user) {
             currentUser = {
@@ -108,29 +168,47 @@ const firebaseConfig = {
                 photoURL: user.photoURL,
                 level: parseInt(localStorage.getItem('p_level') || 1)
             };
-            socket.emit('player-login', currentUser);
+            if (socket) socket.emit('player-login', currentUser);
         }
     });
 
-    socket.on('auth-success', ({ user, cases }) => {
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'block';
+    if (socket) {
+        socket.on('auth-success', ({ user, cases }) => {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
 
-        document.getElementById('u-avatar').src = user.photo;
-        document.getElementById('u-name').innerText = user.name;
-        document.getElementById('u-level').innerText = `LEVEL ${user.level}`;
+            document.getElementById('u-avatar').src = user.photo || 'https://via.placeholder.com/40';
+            document.getElementById('u-name').innerText = user.name;
+            document.getElementById('u-level').innerText = `LEVEL ${user.level}`;
 
-        if (user.isAdmin) {
-            document.getElementById('admin-tag').style.display = 'block';
-            document.getElementById('admin-panel').style.display = 'block';
-        }
+            if (user.isAdmin) {
+                document.getElementById('admin-tag').style.display = 'inline';
+                document.getElementById('admin-panel').style.display = 'block';
+            }
 
-        renderCases(cases);
-    });
+            renderCases(cases);
+        });
+
+        socket.on('answer-result', (res) => {
+            if (res.success) {
+                alert("To'g'ri! Keyingi daraja ochildi.");
+                localStorage.setItem('p_level', res.newLevel);
+                document.getElementById('u-level').innerText = `LEVEL ${res.newLevel}`;
+                renderCases(res.cases);
+            } else {
+                alert(res.message);
+            }
+        });
+    }
 
     function renderCases(cases) {
         const container = document.getElementById('cases-list');
         container.innerHTML = '';
+
+        if (!cases || cases.length === 0) {
+            container.innerHTML = '<p style="color: #64748b;">Hozircha ochiq jinoyat ishlari yo\'q.</p>';
+            return;
+        }
 
         cases.forEach(c => {
             const card = document.createElement('div');
@@ -147,21 +225,10 @@ const firebaseConfig = {
 
     function submitAnswer(caseId) {
         const input = document.getElementById(`ans-${caseId}`).value;
-        if (input) {
+        if (input && socket) {
             socket.emit('submit-answer', { caseId, answer: input });
         }
     }
-
-    socket.on('answer-result', (res) => {
-        if (res.success) {
-            alert("To'g'ri! Keyingi daraja ochildi.");
-            localStorage.setItem('p_level', res.newLevel);
-            document.getElementById('u-level').innerText = `LEVEL ${res.newLevel}`;
-            renderCases(res.cases);
-        } else {
-            alert(res.message);
-        }
-    });
 
     function addCase() {
         const level = document.getElementById('adm-level').value;
@@ -169,7 +236,7 @@ const firebaseConfig = {
         const desc = document.getElementById('adm-desc').value;
         const answer = document.getElementById('adm-answer').value;
 
-        if (title && desc && answer) {
+        if (title && desc && answer && socket) {
             socket.emit('add-case', { level, title, desc, answer });
             alert("Jinoyat ishi qo'shildi!");
         }
@@ -177,4 +244,3 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
-   
