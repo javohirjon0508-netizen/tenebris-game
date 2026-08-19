@@ -99,3 +99,22 @@
     </script>
 </body>
 </html>
+function loginWithGoogle() {
+    // Firebase va Auth ulanganini tekshirish
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+        alert("Xatolik: Firebase kutubxonasi yuklanmagan! `index.html`dagi Firebase scriptlarini tekshiring.");
+        return;
+    }
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    
+    // Kirish jarayonini boshlash
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            alert("Muvaffaqiyatli kirildi: " + result.user.displayName);
+        })
+        .catch((error) => {
+            // Xatolik kodini ekranga chiqarish
+            alert("GOOGLE AUTH XATOSI:\n\nKod: " + error.code + "\nXabar: " + error.message);
+        });
+}
