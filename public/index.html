@@ -57,9 +57,9 @@
         <p>Jinoyatlarni ochish va darajalarni oshirish uchun Google hisobingiz bilan kiring.</p>
         <button class="google-btn" id="google-login-btn">G Google orqali kirish</button>
     </div>
-<script>
+<script type=''module''>
     // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+import { initializeApp,getAuth } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -76,8 +76,8 @@ const firebaseConfig = {
   measurementId: "G-TFCS0P7416"
 };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const socket = io();
 
     let currentUser = null;
