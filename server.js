@@ -105,3 +105,92 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`DETEKTIV SERVER ISHLAMOQDA: PORT ${PORT}`);
 });
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+
+// Statik fayllarni ulash
+app.use(express.static(path.join(__dirname, './')));
+app.use('/admin', express.static(path.join(__dirname, './admin')));
+
+// Boshlang'ich ma'lumotlar bazasi (xotirada)
+let cases = [
+  {
+    id: "case_01",
+    title: "TENEBRIS // QORA KOD",
+    level: 1,
+    imageUrl: "assets/images/case1.jpg",
+    desc: "Bosh server xonasiga ruxsatsiz kirilgan va ma'lumotlar shifrlangan.",
+    suspects: [{ name: "Alex V.", alibi: "Server xonasi kaliti faqat unda bor edi" }],
+    timeline: ["22:00 - Tizim uzildi", "22:15 - Loglar o'chirildi"],
+    answer: "alex"
+  }
+];
+
+io.on('connection', (socket) => {
+  // Foydalanuvchi ulaganda mavjud keyslarni yuborish
+  socket.emit('cases-updated', cases);
+
+  // Admin yangi case qo'shganda
+  socket.on('admin-add-case', (newCase) => {
+    cases.push({ id: 'case_' + Date.now(), ...newCase });
+    io.emit('cases-updated', cases);
+  });
+
+  // Bitta case so'ralganda
+  socket.on('get-case-detail', (id) => {
+    const found = cases.find(c => c.id === id);
+    socket.emit('case-detail-data', found || null);
+  });
+});
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+
+// Statik fayllarni ulash
+app.use(express.static(path.join(__dirname, './')));
+app.use('/admin', express.static(path.join(__dirname, './admin')));
+
+// Boshlang'ich ma'lumotlar bazasi (xotirada)
+let cases = [
+  {
+    id: "case_01",
+    title: "TENEBRIS // QORA KOD",
+    level: 1,
+    imageUrl: "assets/images/case1.jpg",
+    desc: "Bosh server xonasiga ruxsatsiz kirilgan va ma'lumotlar shifrlangan.",
+    suspects: [{ name: "Alex V.", alibi: "Server xonasi kaliti faqat unda bor edi" }],
+    timeline: ["22:00 - Tizim uzildi", "22:15 - Loglar o'chirildi"],
+    answer: "alex"
+  }
+];
+
+io.on('connection', (socket) => {
+  // Foydalanuvchi ulaganda mavjud keyslarni yuborish
+  socket.emit('cases-updated', cases);
+
+  // Admin yangi case qo'shganda
+  socket.on('admin-add-case', (newCase) => {
+    cases.push({ id: 'case_' + Date.now(), ...newCase });
+    io.emit('cases-updated', cases);
+  });
+
+  // Bitta case so'ralganda
+  socket.on('get-case-detail', (id) => {
+    const found = cases.find(c => c.id === id);
+    socket.emit('case-detail-data', found || null);
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Tenebris Server running on port ${PORT}`));
