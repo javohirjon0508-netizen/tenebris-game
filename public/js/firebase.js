@@ -4,12 +4,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+   apiKey: "AIzaSyALWGXz15GQslY6fJI8noiLbXKH-yCB1gI",
+        authDomain: "web-ilova.firebaseapp.com",
+        projectId: "web-ilova",
+        storageBucket: "web-ilova.firebasestorage.app",
+        messagingSenderId: "222468122005",
+        appId: "1:222468122005:web:7443bbd80aaf95634d829c"
 };
 
 const app = initializeApp(firebaseConfig);
