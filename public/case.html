@@ -17,3 +17,57 @@
   </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>TENEBRIS // CASE FILE</title>
+  <link rel="stylesheet" href="css/main.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body style="background: #02050a; color: #00f0ff; font-family: monospace; padding: 20px;">
+
+  <div id="case-container">
+    <h2>Ma'lumotlar yuklanmoqda...</h2>
+  </div>
+
+  <script>
+    const socket = io();
+    const urlParams = new URLSearchParams(window.location.search);
+    const caseId = urlParams.get('id');
+
+    if (caseId) {
+      socket.emit('get-case-detail', caseId);
+      socket.on('case-detail-data', (c) => {
+        if (!c) return;
+        document.getElementById('case-container').innerHTML = `
+          <h1>${c.title}</h1>
+          <p><b>Daraja:</b> LVL ${c.level}</p>
+          <hr style="border-color: #00f0ff;">
+          <h3>Voqea Bayoni:</h3>
+          <p style="color: #fff;">${c.desc}</p>
+          
+          <h3>Gumondorlar:</h3>
+          <ul>
+            ${c.suspects ? c.suspects.map(s => `<li><b>${s.name}:</b> ${s.alibi}</li>`).join('') : 'Yo\'q'}
+          </ul>
+
+          <div style="margin-top: 20px;">
+            <input type="text" id="answer" placeholder="Javobni kiriting..." style="padding: 10px; background: #090e17; border: 1px solid #00f0ff; color: #fff;">
+            <button onclick="submitAnswer('${c.answer}')" style="padding: 10px 20px; background: #00f0ff; border: none; cursor: pointer;">TEKSHIRISH</button>
+          </div>
+        `;
+      });
+    }
+
+    function submitAnswer(correct) {
+      const input = document.getElementById('answer').value.trim();
+      if (input.toLowerCase() === correct.toLowerCase()) {
+        alert("To'g'ri! Topshiriq bajarildi.");
+      } else {
+        alert("Noto'g'ri parolar yoki javob!");
+      }
+    }
+  </script>
+</body>
+</html>
