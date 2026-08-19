@@ -57,64 +57,116 @@
         <p>Jinoyatlarni ochish va darajalarni oshirish uchun Google hisobingiz bilan kiring.</p>
         <button class="google-btn" id="google-login-btn">G Google orqali kirish</button>
     </div>
+<script>
+    // ⚠️ FIREBASE SOZLAMALARI
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "SENDER_ID",
+        appId: "APP_ID"
+    };
 
-    <!-- FIREBASE INTEGRATSIYASI -->
-    <script type="module">
-        import { initializeApp } from "https://gstatic.com";
-        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://gstatic.com";
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const socket = io();
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyALWGXz15GQslY6fjI8noiLbXKh-yCB1gI",
-            authDomain: "://firebaseapp.com",
-            projectId: "web-ilova",
-            storageBucket: "web-ilova.firebasestorage.app",
-            messagingSenderId: "222468122005",
-            appId: "1:222468122005:web:7443bbd80aaf95634d829c",
-            measurementId: "G-TFCSP7416"
-        };
+    let currentUser = null;
 
-        // Firebase-ni ishga tushirish
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-
-        // Tugmani topish va bosishni eshitish
-        const loginBtn = document.getElementById('google-login-btn');
-
-        if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
-                signInWithPopup(auth, provider)
-                    .then((result) => {
-                        const user = result.user;
-                        alert("Xush kelibsiz, " + user.displayName + "!");
-                        // BU YERGA LOGIN BO'LGANDAN KEYIN O'YINGA O'TA DIGAN KODNI YOZASIZ
-                        // Masalan: window.location.href = "game.html";
-                    })
-                    .catch((error) => {
-                        alert("Xatolik yuz berdi: " + error.message);
-                        console.error(error);
-                    });
-            });
+    function loginWithGoogle() {
+        if (typeof firebase === 'undefined' || !firebase.auth) {
+            alert("Xatolik: Firebase kutubxonasi yuklanmagan!");
+            return;
         }
-    </script>
-</body>
-</html>
-function loginWithGoogle() {
-    // Firebase va Auth ulanganini tekshirish
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-        alert("Xatolik: Firebase kutubxonasi yuklanmagan! index.html dagi Firebase scriptlarini tekshiring.");
-        return;
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        auth.signInWithPopup(provider)
+            .then((result) => {
+                alert("Muvaffaqiyatli kirildi: " + result.user.displayName);
+            })
+            .catch((error) => {
+                alert("GOOGLE AUTH XATOSI:\n\nKod: " + error.code + "\nXabar: " + error.message);
+            });
     }
 
-    const provider = new firebase.auth.GoogleAuthProvider();
-    
-    // Kirish jarayonini boshlash
-    auth.signInWithPopup(provider)
-        .then((result) => {
-            alert("Muvaffaqiyatli kirildi: " + result.user.displayName);
-        })
-        .catch((error) => {
-            // Xatolik kodini ekranga chiqarish
-            alert("GOOGLE AUTH XATOSI:\n\nKod: " + error.code + "\nXabar: " + error.message);
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            currentUser = {
+                uid: user.uid,
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                level: parseInt(localStorage.getItem('p_level') || 1)
+            };
+            socket.emit('player-login', currentUser);
+        }
+    });
+
+    socket.on('auth-success', ({ user, cases }) => {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+
+        document.getElementById('u-avatar').src = user.photo;
+        document.getElementById('u-name').innerText = user.name;
+        document.getElementById('u-level').innerText = `LEVEL ${user.level}`;
+
+        if (user.isAdmin) {
+            document.getElementById('admin-tag').style.display = 'block';
+            document.getElementById('admin-panel').style.display = 'block';
+        }
+
+        renderCases(cases);
+    });
+
+    function renderCases(cases) {
+        const container = document.getElementById('cases-list');
+        container.innerHTML = '';
+
+        cases.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'case-card';
+            card.innerHTML = `
+                <div class="case-title">[L- ${c.level}] ${c.title}</div>
+                <div class="case-desc">${c.desc}</div>
+                <input type="text" id="ans-${c.id}" placeholder="Kodni kiritish...">
+                <button class="btn-action" onclick="submitAnswer(${c.id})">TEKSHIRISH</button>
+            `;
+            container.appendChild(card);
         });
-}
+    }
+
+    function submitAnswer(caseId) {
+        const input = document.getElementById(`ans-${caseId}`).value;
+        if (input) {
+            socket.emit('submit-answer', { caseId, answer: input });
+        }
+    }
+
+    socket.on('answer-result', (res) => {
+        if (res.success) {
+            alert("To'g'ri! Keyingi daraja ochildi.");
+            localStorage.setItem('p_level', res.newLevel);
+            document.getElementById('u-level').innerText = `LEVEL ${res.newLevel}`;
+            renderCases(res.cases);
+        } else {
+            alert(res.message);
+        }
+    });
+
+    function addCase() {
+        const level = document.getElementById('adm-level').value;
+        const title = document.getElementById('adm-title').value;
+        const desc = document.getElementById('adm-desc').value;
+        const answer = document.getElementById('adm-answer').value;
+
+        if (title && desc && answer) {
+            socket.emit('add-case', { level, title, desc, answer });
+            alert("Jinoyat ishi qo'shildi!");
+        }
+    }
+</script>
+</body>
+</html>
+   
