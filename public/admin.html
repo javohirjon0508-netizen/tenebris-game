@@ -167,7 +167,7 @@
         .btn-del { background: var(--accent-pink); color: #fff; }
         .btn-add { background: var(--accent-cyan); color: #000; font-weight: bold; }
 
-        /* MODAL (YANGI CASE / BROADCAST UCHUN) */
+        /* MODAL */
         .modal {
             display: none;
             position: fixed;
@@ -181,14 +181,34 @@
         .modal-content {
             background: var(--panel-bg);
             border: 1px solid var(--accent-cyan);
-            width: 400px;
+            width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
             padding: 20px;
             border-radius: 6px;
         }
 
         input, textarea {
             width: 100%; background: #02050a; border: 1px solid var(--border-color); color: #fff;
-            padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 0.8rem;
+            padding: 8px; margin: 4px 0 10px 0; border-radius: 4px; font-size: 0.8rem;
+        }
+
+        .dynamic-item {
+            background: #050810;
+            border: 1px dashed var(--border-color);
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            font-weight: bold;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
@@ -270,18 +290,46 @@
         </div>
     </div>
 
-    <!-- MODAL 1: YANGI CASE YARATISH -->
+    <!-- MODAL 1: YANGI CASE YARATISH (TAKOMILLASHTIRILGAN) -->
     <div id="case-modal" class="modal">
         <div class="modal-content">
-            <h3 style="color: var(--accent-cyan); margin-bottom: 10px;">Yangi Case Yaratish</h3>
-            <input type="text" id="c-id" placeholder="Case ID (masalan: case_05)">
-            <input type="text" id="c-title" placeholder="Case Nomi">
-            <input type="number" id="c-level" placeholder="Talab etiladigan Level" value="1">
-            <textarea id="c-desc" placeholder="Topshiriq Matni"></textarea>
-            <input type="text" id="c-answer" placeholder="To'g'ri Parol / Kod">
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="btn-sm btn-add" style="flex:1; padding: 8px;" onclick="submitNewCase()">Saqlash</button>
-                <button class="btn-sm btn-del" style="flex:1; padding: 8px;" onclick="closeModal('case-modal')">Yopish</button>
+            <h3 style="color: var(--accent-cyan); margin-bottom: 15px;">Yangi Case Yaratish</h3>
+            
+            <label style="font-size: 0.75rem;">Case ID:</label>
+            <input type="text" id="c-id" placeholder="Masalan: case_05">
+
+            <label style="font-size: 0.75rem;">Case Nomi / Sarlavhasi:</label>
+            <input type="text" id="c-title" placeholder="Masalan: 2-Level: Qora Kod">
+
+            <label style="font-size: 0.75rem;">Talab etiladigan Level:</label>
+            <input type="number" id="c-level" placeholder="1" value="1">
+
+            <label style="font-size: 0.75rem;">Asosiy Rasm (Banner URL):</label>
+            <input type="text" id="c-image" placeholder="https://sayt.com/rasm.jpg">
+
+            <label style="font-size: 0.75rem;">Voqea Bayoni (Matn):</label>
+            <textarea id="c-desc" rows="3" placeholder="Jinoyat sohasi va tafsilotlari..."></textarea>
+
+            <!-- GUMONDORLAR BO'LIMI -->
+            <div class="section-label">
+                <span>GUMONDORLAR RO'YXATI</span>
+                <button type="button" class="btn-sm btn-add" onclick="addSuspectInput()">+ Gumondor</button>
+            </div>
+            <div id="suspects-list"></div>
+
+            <!-- VAQT XRONOLOGIYASI -->
+            <div class="section-label">
+                <span>VAQT XRONOLOGIYASI</span>
+                <button type="button" class="btn-sm btn-add" onclick="addTimelineInput()">+ Vaqt</button>
+            </div>
+            <div id="timeline-list"></div>
+
+            <label style="font-size: 0.75rem; margin-top: 10px; display: block;">To'g'ri Parol / Qotil Ismi:</label>
+            <input type="text" id="c-answer" placeholder="Masalan: Malika Sodiqova">
+
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn-sm btn-add" style="flex:1; padding: 10px;" onclick="submitNewCase()">Saqlash va Yuborish</button>
+                <button class="btn-sm btn-del" style="flex:1; padding: 10px;" onclick="closeModal('case-modal')">Yopish</button>
             </div>
         </div>
     </div>
@@ -299,7 +347,6 @@
     </div>
 
 <script>
-    // Socket.io Ulanish
     const socket = typeof io !== 'undefined' ? io() : null;
 
     // Chart.js Ishga tushirish
@@ -323,7 +370,6 @@
     if (socket) {
         socket.emit('admin-init');
 
-        // Real vaqtda barcha Case-larni qabul qilish
         socket.on('admin-cases-data', (cases) => {
             document.getElementById('kpi-cases').innerText = cases.length;
             const tbody = document.getElementById('cases-table-body');
@@ -341,7 +387,6 @@
             });
         });
 
-        // Real vaqtda barcha User-larni qabul qilish
         socket.on('admin-users-data', (users) => {
             document.getElementById('kpi-users').innerText = users.length;
             document.getElementById('kpi-online').innerText = users.filter(u => u.isOnline).length;
@@ -358,11 +403,32 @@
                 `;
             });
 
-            // Grafikni yangilash
             liveChart.data.datasets[0].data.shift();
             liveChart.data.datasets[0].data.push(users.filter(u => u.isOnline).length);
             liveChart.update();
         });
+    }
+
+    // Dynamic Inputlar Qo'shish Funksiyalari
+    function addSuspectInput() {
+        const list = document.getElementById('suspects-list');
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" class="s-name" placeholder="Ism va Rol (masalan: Anvar - Programmist)">
+            <input type="text" class="s-alibi" placeholder="Ko'rsatmasi / Alibi">
+        `;
+        list.appendChild(div);
+    }
+
+    function addTimelineInput() {
+        const list = document.getElementById('timeline-list');
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" class="t-event" placeholder="masalan: 21:30 - Serverga ruxsatsiz kirish bo'ldi">
+        `;
+        list.appendChild(div);
     }
 
     // Modal funksiyalari
@@ -370,14 +436,31 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     // REAL AMALLAR:
-
-    // 1. Yangi Case Qo'shish
     function submitNewCase() {
+        // Gumondorlarni yig'ib olish
+        const suspects = [];
+        document.querySelectorAll('#suspects-list .dynamic-item').forEach(item => {
+            const name = item.querySelector('.s-name').value;
+            const alibi = item.querySelector('.s-alibi').value;
+            if(name) suspects.push({ name, alibi });
+        });
+
+        // Vaqtlarni yig'ib olish
+        const timeline = [];
+        document.querySelectorAll('#timeline-list .dynamic-item').forEach(item => {
+            const event = item.querySelector('.t-event').value;
+            if(event) timeline.push(event);
+        });
+
+        // Backend'ga yuboriladigan to'liq obyekt
         const caseData = {
             id: document.getElementById('c-id').value,
             title: document.getElementById('c-title').value,
             level: parseInt(document.getElementById('c-level').value),
+            imageUrl: document.getElementById('c-image').value,
             desc: document.getElementById('c-desc').value,
+            suspects: suspects,
+            timeline: timeline,
             answer: document.getElementById('c-answer').value
         };
 
@@ -386,23 +469,20 @@
             alert("Case muvaffaqiyatli saqlandi!");
             closeModal('case-modal');
         } else {
-            alert("Barcha maydonlarni to'ldiring!");
+            alert("Case ID va To'g'ri Parol bo'limlarini to'ldiring!");
         }
     }
 
-    // 2. Case-ni o'chirish
     function deleteCase(id) {
         if(confirm(`Rostdan ham ${id} ni o'chirmoqchimisiz?`) && socket) {
             socket.emit('admin-delete-case', { id });
         }
     }
 
-    // 3. User Levelini oshirish
     function addLevel(uid, newLevel) {
         if(socket) socket.emit('admin-update-user-level', { uid, level: newLevel });
     }
 
-    // 4. Global Broadcast Yuborish
     function sendBroadcast() {
         const msg = document.getElementById('b-msg').value;
         if(msg && socket) {
