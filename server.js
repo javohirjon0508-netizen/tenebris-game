@@ -4,22 +4,24 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: { origin: "*" }
+});
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// ADMIN EMAIL SOZLAMASI
+// ADMIN EMAIL
 const ADMIN_EMAIL = "javohirjon0508@gmail.com";
 
-// JINOYATLAR BAZASI (Dastlab bo'sh turadi, Admin panel orqali to'ldiriladi)
+// JINOYAT ISHLARI BAZASI
 let cases = [];
 let players = {};
 
 io.on('connection', (socket) => {
   console.log('⚡ Detektiv ulandi ID:', socket.id);
 
-  // Foydalanuvchi Google orqali kirganda
+  // 1. O'YINCHI TIZIMGA KIRGANDA (Firebase Auth orqali)
   socket.on('player-login', (userData) => {
     if (!userData || !userData.email) return;
 
@@ -32,59 +34,74 @@ io.on('connection', (socket) => {
       email: userData.email,
       photo: userData.photoURL || "https://via.placeholder.com/40",
       level: userData.level || 1,
-      xp: userData.xp || 0,
       isAdmin: isAdmin
     };
 
-    // Foydalanuvchiga mavjud jinoyatlarni yuborish
+    // Muvaffaqiyatli avtorizatsiya va mos darajadagi jinoyatlarni yuborish
     socket.emit('auth-success', {
       user: players[socket.id],
-      cases: cases.filter(c => c.level <= players[socket.id].level)
+      cases: cases.filter(c => parseInt(c.level) <= players[socket.id].level)
     });
-
-    io.emit('update-players', Object.values(players));
   });
 
-  // ADMIN PANEL: Yangi Jinoyat Ishi qo'shish (Formadan kelgan obyekt)
-  socket.on('admin-create-case', (newCaseData) => {
+  // 2. ADMIN PANEL: JINOYAT QO'SHISH (index.html dagi addCase() uchun)
+  socket.on('add-case', (newCase) => {
     const player = players[socket.id];
+    
     if (player && player.isAdmin) {
-      newCaseData.id = cases.length + 1;
-      cases.push(newCaseData); // Baza elementiga saqlash
+      const caseItem = {
+        id: Date.now(),
+        level: parseInt(newCase.level) || 1,
+        title: newCase.title,
+        desc: newCase.desc,
+        answer: newCase.answer.trim().toLowerCase()
+      };
 
-      // Barcha o'yinchilar ekranini real-vaqtda yangilash
+      cases.push(caseItem);
+
+      // Barcha ulangan foydalanuvchilarga darajasiga mos ravishda tarqatish
       Object.keys(players).forEach(sId => {
-        io.to(sId).emit('cases-updated', cases.filter(c => c.level <= players[sId].level));
+        io.to(sId).emit('auth-success', {
+          user: players[sId],
+          cases: cases.filter(c => parseInt(c.level) <= players[sId].level)
+        });
       });
-      
-      socket.emit('admin-action-result', { success: true, message: "Yangi jinoyat ishi muvaffaqiyatli chop etildi!" });
     }
   });
 
-  // Tergov xulosasini tekshirish
-  socket.on('submit-final-verdict', ({ caseId, guiltySuspectId, selectedEvidences }) => {
+  // 3. JAVOBNI TEKSHIRISH (index.html dagi submitAnswer() uchun)
+  socket.on('submit-answer', ({ caseId, answer }) => {
     const player = players[socket.id];
-    const targetCase = cases.find(c => c.id === parseInt(caseId));
+    const targetCase = cases.find(c => c.id === caseId);
 
-    if (!targetCase || !player) return;
+    if (!player || !targetCase) return;
 
-    const isGuiltyCorrect = targetCase.finalVerdict?.guiltySuspectId === guiltySuspectId;
+    const userAnswer = answer.trim().toLowerCase();
 
-    if (isGuiltyCorrect) {
+    if (userAnswer === targetCase.answer) {
       player.level += 1;
-      player.xp += 500;
-      socket.emit('verdict-result', { success: true, newLevel: player.level });
-      io.emit('update-players', Object.values(players));
+
+      // Foydalanuvchiga muvaffaqiyatli javob va yangi darajadagi ishlarni qaytarish
+      socket.emit('answer-result', {
+        success: true,
+        newLevel: player.level,
+        cases: cases.filter(c => parseInt(c.level) <= player.level)
+      });
     } else {
-      socket.emit('verdict-result', { success: false, message: "Noto'g me'moriy xulosa! Gumondor yoki dalillar xato." });
+      socket.emit('answer-result', {
+        success: false,
+        message: "Noto'g'ri kod/javob! Qaytadan urinib ko'ring."
+      });
     }
   });
 
+  // ULANISH UZILGANDA
   socket.on('disconnect', () => {
     delete players[socket.id];
-    io.emit('update-players', Object.values(players));
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`DETEKTIV SERVER ISHLAMOQDA: PORT ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`DETEKTIV SERVER ISHLAMOQDA: PORT ${PORT}`);
+});
