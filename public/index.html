@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TENEBRIS // DETECTIVE OS</title>
 
+    <!-- Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDK (Barqaror v8 versiyasi) -->
+    <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js)"></script>
+    <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js)"></script>
+
+    <!-- FontAwesome Font -->
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -206,7 +211,7 @@
     <div class="top-bar">
         <div class="brand"><i class="fa-solid fa-shield-halved"></i> TENEBRIS // SYSTEM v2.4</div>
         <div class="user-profile">
-            <img id="u-avatar" class="u-avatar" src="https://via.placeholder.com/24">
+            <img id="u-avatar" class="u-avatar" src="[https://via.placeholder.com/24](https://via.placeholder.com/24)">
             <span id="u-name" style="font-weight: bold; font-size: 0.8rem;">OFFLINE</span>
             <span id="u-level" style="color: #00f0ff; font-size: 0.75rem; background: rgba(0, 240, 255, 0.1); padding: 2px 6px; border-radius: 4px;">LVL 1</span>
         </div>
@@ -219,10 +224,6 @@
             <div class="app-icon" onclick="openWindow('cases-win')">
                 <i class="fa-solid fa-folder-closed"></i>
                 <span>Cases</span>
-            </div>
-            <div class="app-icon" onclick="openWindow('evidence-win')">
-                <i class="fa-solid fa-file-contract"></i>
-                <span>Evidence</span>
             </div>
             <div class="app-icon" onclick="openWindow('agent-win')">
                 <i class="fa-solid fa-comments"></i>
@@ -282,13 +283,19 @@
         appId: "1:222468122005:web:7443bbd80aaf95634d829c"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    // Firebase Initsializatsiya
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const auth = firebase.auth();
     const socket = typeof io !== 'undefined' ? io() : null;
 
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(err => alert(err.message));
+        auth.signInWithPopup(provider).catch(err => {
+            console.error("Auth Error:", err);
+            alert("Kirishda xatolik: " + err.message);
+        });
     }
 
     auth.onAuthStateChanged((user) => {
@@ -306,9 +313,9 @@
     if (socket) {
         socket.on('auth-success', ({ user, cases }) => {
             document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('u-avatar').src = user.photo || 'https://via.placeholder.com/24';
-            document.getElementById('u-name').innerText = user.name.toUpperCase();
-            document.getElementById('u-level').innerText = `LVL ${user.level}`;
+            document.getElementById('u-avatar').src = user.photo || '[https://via.placeholder.com/24](https://via.placeholder.com/24)';
+            document.getElementById('u-name').innerText = (user.name || 'AGENT').toUpperCase();
+            document.getElementById('u-level').innerText = `LVL ${user.level || 1}`;
 
             if (user.isAdmin) {
                 document.getElementById('admin-link').style.display = 'block';
@@ -333,33 +340,4 @@
         const container = document.getElementById('cases-list');
         container.innerHTML = '';
 
-        if (!cases || cases.length === 0) {
-            container.innerHTML = '<p style="color: #64748b; font-size: 0.8rem; grid-column: span 3;">Papka bo'sh.</p>';
-            return;
-        }
-
-        cases.forEach(c => {
-            const card = document.createElement('div');
-            card.className = 'folder-card';
-            card.onclick = () => openCaseDetail(c);
-            card.innerHTML = `
-                <i class="fa-solid fa-folder-closed"></i>
-                <div style="color: #fff; font-weight: bold;">[L-${c.level}]</div>
-                <div style="color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${c.title}</div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    function openCaseDetail(c) {
-        const inputCode = prompt(`${c.title}\n\n${c.desc}\n\nKodni kiriting:`);
-        if (inputCode && socket) {
-            socket.emit('submit-answer', { caseId: c.id, answer: inputCode });
-        }
-    }
-
-    function openWindow(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeWindow(id) { document.getElementById(id).style.display = 'none'; }
-</script>
-</body>
-</html>
+        if (!cases || cases.length === 0)
