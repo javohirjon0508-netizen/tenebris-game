@@ -3,392 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiber-Pult | Admin Panel</title>
+    <title>Tenebris-Detektiv | Admin Panel</title>
+
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <style>
-        :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --border-color: #30363d;
-            --accent-color: #238636;
-            --danger-color: #da3633;
-            --text-color: #c9d1d9;
-            --glow-color: rgba(56, 139, 253, 0.15);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            margin: 0;
             padding: 20px;
-        }
-
-        /* Modal Auth UI */
-        #auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(13, 17, 23, 0.95);
+            background-color: #0b0e14;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            backdrop-filter: blur(5px);
         }
-
-        .auth-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 30px;
+        .admin-box {
+            max-width: 550px;
+            width: 100%;
+            background: #121721;
+            border: 1px solid #1e2638;
+            padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            max-width: 350px;
-            width: 100%;
         }
-
-        .auth-card h2 {
-            margin-bottom: 15px;
-            color: #58a6ff;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-        }
-
-        /* Main Panel Layout */
-        #admin-panel {
-            display: none;
-            width: 100%;
-            max-width: 900px;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        .panel-header {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .panel-header h1 {
-            font-size: 1.4rem;
-            color: #58a6ff;
-        }
-
-        .status-badge {
-            background: rgba(35, 134, 54, 0.2);
-            color: #3fb950;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            border: 1px solid #238636;
-        }
-
-        .section-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .section-card h3 {
-            font-size: 1rem;
-            margin-bottom: 15px;
-            color: #8b949e;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Inputs & Buttons */
-        input[type="text"], input[type="password"], textarea, select {
+        h2 { color: #ff0055; margin-bottom: 20px; border-bottom: 1px solid #1e2638; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; color: #00f0ff; margin-bottom: 5px; }
+        input, textarea, select {
             width: 100%;
             padding: 12px;
-            background: #0d1117;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
+            background: #0b0e14;
+            border: 1px solid #1e2638;
+            border-radius: 8px;
             color: #fff;
-            margin-bottom: 12px;
-            font-size: 0.95rem;
+            box-sizing: border-box;
             outline: none;
         }
-
-        input:focus, textarea:focus {
-            border-color: #58a6ff;
-            box-shadow: 0 0 0 3px var(--glow-color);
-        }
-
-        button {
+        .btn-submit {
             width: 100%;
-            padding: 12px;
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        /* Players List */
-        .players-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 12px;
-        }
-
-        .player-item {
-            background: #0d1117;
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .player-name {
-            font-weight: bold;
-            color: #e6edf3;
-        }
-
-        .btn-private {
-            background: #1f6beb;
-            padding: 6px 10px;
-            font-size: 0.8rem;
-            width: auto;
-        }
-
-        /* Private Message Modal */
-        #pm-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        }
-
-        .file-upload-wrapper {
-            margin-bottom: 12px;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .file-upload-label {
-            display: block;
-            background: #21262d;
-            border: 1px dashed var(--border-color);
-            padding: 12px;
-            text-align: center;
-            border-radius: 6px;
-            cursor: pointer;
-            color: #8b949e;
-        }
-
-        .file-upload-label:hover {
-            border-color: #58a6ff;
+            padding: 14px;
+            background: #ff0055;
             color: #fff;
-        }
-
-        #file-preview {
-            max-width: 100%;
-            max-height: 150px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
             margin-top: 10px;
-            display: none;
-            border-radius: 6px;
         }
+        .btn-submit:hover { background: #d60047; }
+        #auth-gate { text-align: center; padding: 40px 0; }
+        .google-btn { background: #f4c430; color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- Kirish Paroli Oynasi -->
-    <div id="auth-overlay">
-        <div class="auth-card">
-            <h2>🔒 KIBER-PULT ACCESS</h2>
-            <input type="password" id="admin-pass" placeholder="Parolni kiriting...">
-            <button onclick="checkAuth()">KIRISH</button>
-            <p id="auth-err" style="color: var(--danger-color); font-size: 0.85rem; margin-top: 10px; display: none;">Xato parol kiritildi!</p>
-        </div>
+<div class="admin-box">
+    <!-- AUTH TEKSHIRUV EKRANI -->
+    <div id="auth-gate">
+        <h3 style="color: #00f0ff;">⚙️ ADMIN PANELGA KIRISH</h3>
+        <p style="color: #8a99ad; font-size: 0.9rem;">Boshqaruv paneliga kirish uchun Admin Google hisobingizdan foydalaning.</p>
+        <button class="google-btn" onclick="loginAdmin()">G Google orqali tasdiqlash</button>
     </div>
 
-    <!-- Asosiy Boshqaruv Paneli -->
-    <div id="admin-panel">
-        <div class="panel-header">
-            <h1>⚙️ BOSHGARUV PANELI</h1>
-            <span class="status-badge" id="server-status">ONLINE</span>
+    <!-- MAIN ADMIN FORM -->
+    <div id="admin-content" style="display: none;">
+        <h2>⚙️ YANGI TERGOV ISHI YARATISH</h2>
+
+        <div class="form-group">
+            <label>O'yinchi Darajasi (Level)</label>
+            <input type="number" id="adm-level" value="1">
         </div>
 
-        <!-- Onlayn O'yinchilar Bo'limi -->
-        <div class="section-card">
-            <h3>🟢 ONLAYN O'YINCHILAR (<span id="player-count">0</span>)</h3>
-            <div class="players-list" id="players-container">
-                <p style="color: #8b949e;">Hozircha hech kim onlayn emas...</p>
-            </div>
+        <div class="form-group">
+            <label>Jinoyat Ishi Sarlavhasi</label>
+            <input type="text" id="adm-title" placeholder="Masalan: 001-SONLI ISH: Tun qorong'usi">
         </div>
 
-        <!-- Dalillar va Rasm Yuklash Bo'limi -->
-        <div class="section-card">
-            <h3>🖼️ YANGI DALIL / RASM YUKLASH</h3>
-            <input type="text" id="evidence-title" placeholder="Dalil sarlavhasi (masalan: Iz 04)">
-            <textarea id="evidence-desc" rows="3" placeholder="Dalil tavsifi hamda xabar matni..."></textarea>
-            
-            <div class="file-upload-wrapper">
-                <label for="evidence-file" class="file-upload-label" id="file-label">📁 Galereyadan rasm tanlang</label>
-                <input type="file" id="evidence-file" accept="image/*" onchange="handleFileSelect(event)">
-                <img id="file-preview" src="#" alt="Preview">
-            </div>
-
-            <button onclick="sendEvidence()">DALILNI RASMI BILAN YUBORISH</button>
+        <div class="form-group">
+            <label>Kategoriya</label>
+            <input type="text" id="adm-category" placeholder="Qotillik / O'g'rilik / Kiber-jinoyat">
         </div>
+
+        <div class="form-group">
+            <label>Hodisa Joyi Tafsilotlari (Overview)</label>
+            <textarea id="adm-desc" rows="4" placeholder="Voqea sodir bo'lgan joy, vaqt va birinchi belgilar..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Asosiy Gumondor Ismi / ID si</label>
+            <input type="text" id="adm-suspect" placeholder="Masalan: Jasur Komilov (susp_1)">
+        </div>
+
+        <div class="form-group">
+            <label>To'g'ri Kalit So'z / Parol / Masalani Yechimi</label>
+            <input type="text" id="adm-answer" placeholder="Masalan: susp_1 yoki pichoq">
+        </div>
+
+        <button class="btn-submit" onclick="publishCase()">CHOP ETISH (PUBLISH)</button>
     </div>
+</div>
 
-    <!-- Shaxsiy Xabar Yuborish Modali -->
-    <div id="pm-modal">
-        <div class="auth-card" style="max-width: 400px;">
-            <h3>💬 Shaxsiy Xabar: <span id="pm-target-name" style="color: #58a6ff;"></span></h3>
-            <textarea id="pm-message" rows="4" placeholder="Xabaringizni yozing..."></textarea>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="sendPrivateMessage()">YUBORISH</button>
-                <button onclick="closePmModal()" style="background: #21262d;">BEKOR QILISH</button>
-            </div>
-        </div>
-    </div>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyALWGXz15GQslY6fJI8noiLbXKH-yCB1gI",
+        authDomain: "web-ilova.firebaseapp.com",
+        projectId: "web-ilova",
+        storageBucket: "web-ilova.firebasestorage.app",
+        messagingSenderId: "222468122005",
+        appId: "1:222468122005:web:7443bbd80aaf95634d829c",
+        measurementId: "G-TFCS0P7416"
+    };
 
-    <script>
-        // SOZLANGAN PAROL: zaynab
-        const ADMIN_PASSWORD = "zaynab";
-        const socket = io();
-        let selectedPlayerId = null;
-        let selectedImageData = null;
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const socket = typeof io !== 'undefined' ? io() : null;
 
-        function checkAuth() {
-            const input = document.getElementById("admin-pass").value;
-            if (input === ADMIN_PASSWORD) {
-                document.getElementById("auth-overlay").style.display = "none";
-                document.getElementById("admin-panel").style.display = "grid";
-                socket.emit("admin-login");
+    function loginAdmin() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(err => alert("Xato: " + err.message));
+    }
+
+    auth.onAuthStateChanged((user) => {
+        if (user && socket) {
+            socket.emit('player-login', {
+                uid: user.uid,
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL
+            });
+        }
+    });
+
+    if (socket) {
+        socket.on('auth-success', ({ user }) => {
+            if (user.isAdmin) {
+                document.getElementById('auth-gate').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
             } else {
-                document.getElementById("auth-err").style.display = "block";
+                alert("RUXSAT BERILMAGAN! Siz Admin emassiz.");
+                window.location.href = "/";
             }
-        }
-
-        // Enter tugmasini bosganda ham kirish
-        document.getElementById("admin-pass").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") checkAuth();
         });
+    }
 
-        // O'yinchilar ro'yxatini qabul qilish
-        socket.on("update-players", (players) => {
-            const container = document.getElementById("players-container");
-            document.getElementById("player-count").innerText = players.length;
+    function publishCase() {
+        const level = document.getElementById('adm-level').value;
+        const title = document.getElementById('adm-title').value;
+        const category = document.getElementById('adm-category').value;
+        const desc = document.getElementById('adm-desc').value;
+        const suspect = document.getElementById('adm-suspect').value;
+        const answer = document.getElementById('adm-answer').value;
 
-            if (players.length === 0) {
-                container.innerHTML = `<p style="color: #8b949e;">Hozircha hech kim onlayn emas...</p>`;
-                return;
-            }
-
-            container.innerHTML = "";
-            players.forEach(player => {
-                const item = document.createElement("div");
-                item.className = "player-item";
-                item.innerHTML = `
-                    <span class="player-name">👤 ${player.name}</span>
-                    <button class="btn-private" onclick="openPmModal('${player.id}', '${player.name}')">💬 Shaxsiy Xabar</button>
-                `;
-                container.appendChild(item);
-            });
-        });
-
-        // Shaxsiy xabar oynasini ochish
-        function openPmModal(id, name) {
-            selectedPlayerId = id;
-            document.getElementById("pm-target-name").innerText = name;
-            document.getElementById("pm-modal").style.display = "flex";
+        if (title && desc && answer && socket) {
+            socket.emit('add-case', { level, title, category, desc, suspect, answer });
+            alert("Yangi jinoyat ishi muvaffaqiyatli chop etildi!");
+            document.getElementById('adm-title').value = '';
+            document.getElementById('adm-category').value = '';
+            document.getElementById('adm-desc').value = '';
+            document.getElementById('adm-suspect').value = '';
+            document.getElementById('adm-answer').value = '';
+        } else {
+            alert("Iltimos, barcha maydonlarni to'ldiring!");
         }
-
-        function closePmModal() {
-            document.getElementById("pm-modal").style.display = "none";
-            document.getElementById("pm-message").value = "";
-            selectedPlayerId = null;
-        }
-
-        function sendPrivateMessage() {
-            const msg = document.getElementById("pm-message").value;
-            if (msg && selectedPlayerId) {
-                socket.emit("send-private-msg", { targetId: selectedPlayerId, message: msg });
-                alert("Shaxsiy xabar yuborildi!");
-                closePmModal();
-            }
-        }
-
-        // Galereyadan rasmni o'qib olish (Base64)
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    selectedImageData = e.target.result;
-                    const preview = document.getElementById("file-preview");
-                    preview.src = selectedImageData;
-                    preview.style.display = "block";
-                    document.getElementById("file-label").innerText = `📁 ${file.name}`;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // Dalil va Rasmni tarqatish
-        function sendEvidence() {
-            const title = document.getElementById("evidence-title").value;
-            const desc = document.getElementById("evidence-desc").value;
-
-            if (!title || !desc) {
-                alert("Sarlavha va tavsifni kiriting!");
-                return;
-            }
-
-            socket.emit("new-evidence", {
-                title: title,
-                desc: desc,
-                image: selectedImageData
-            });
-
-            alert("Dalil barcha o'yinchilarga muvaffaqiyatli yuborildi!");
-            
-            // Maydonlarni tozalash
-            document.getElementById("evidence-title").value = "";
-            document.getElementById("evidence-desc").value = "";
-            document.getElementById("evidence-file").value = "";
-            document.getElementById("file-preview").style.display = "none";
-            document.getElementById("file-label").innerText = "📁 Galereyadan rasm tanlang";
-            selectedImageData = null;
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
