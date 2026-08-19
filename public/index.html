@@ -3,171 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TENEBRIS // TERMINAL</title>
+    <title>TENEBRIS // DETECTIVE OS</title>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&display=swap');
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
-            background-color: #05070a;
-            color: #00ff66;
-            font-family: 'Fira Code', monospace;
+            background: #02050a;
+            color: #d1d5db;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+        }
+
+        /* TOP NAVIGATION BAR */
+        .top-bar {
+            height: 38px;
+            background: #080d16;
+            border-bottom: 1px solid #131d2e;
+            display: flex;
             align-items: center;
-            min-height: 100vh;
-            padding: 15px;
-            overflow-x: hidden;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-size: 0.85rem;
         }
+        .top-bar .brand { color: #00f0ff; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .top-bar .user-profile { display: flex; align-items: center; gap: 10px; }
+        .u-avatar { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #00f0ff; }
 
-        /* CRT MONITOR EFFEKTI */
-        body::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 10;
-            background-size: 100% 3px, 6px 100%;
-            pointer-events: none;
-        }
-
-        .terminal-box {
-            max-width: 520px;
-            width: 100%;
-            background: rgba(10, 14, 20, 0.95);
-            border: 2px solid #00ff66;
-            border-radius: 8px;
+        /* WORKSPACE DESKTOP AREA */
+        .desktop {
+            flex: 1;
+            position: relative;
             padding: 20px;
-            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
-            position: relative;
-            z-index: 1;
+            display: flex;
+            gap: 20px;
+            background: radial-gradient(circle at center, #0a101d 0%, #02050a 100%);
         }
 
-        h1 {
-            font-size: 1.5rem;
-            text-align: center;
-            color: #00ff66;
-            text-shadow: 0 0 8px #00ff66;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+        /* ICON GRID ON DESKTOP */
+        .desktop-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 80px;
         }
-
-        .cyber-btn {
-            background: transparent;
-            color: #00ff66;
-            border: 1px solid #00ff66;
-            padding: 12px 20px;
-            font-family: 'Fira Code', monospace;
-            font-weight: bold;
-            width: 100%;
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
             cursor: pointer;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            text-align: center;
             transition: 0.2s;
-            text-transform: uppercase;
-            box-shadow: inset 0 0 5px rgba(0, 255, 102, 0.2);
         }
+        .app-icon i { font-size: 1.8rem; color: #00f0ff; }
+        .app-icon:hover { color: #fff; transform: scale(1.05); }
 
-        .cyber-btn:hover {
-            background: #00ff66;
-            color: #05070a;
-            box-shadow: 0 0 15px #00ff66;
-        }
-
-        /* CASE FILE STYLE */
-        .case-folder {
-            background: #0d131d;
-            border: 1px dashed #00ff66;
-            padding: 15px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .case-folder::before {
-            content: "TOP SECRET";
+        /* WINDOW INTERFACE SYSTEM */
+        .os-window {
             position: absolute;
-            top: -10px; right: 10px;
-            background: #ff0055;
-            color: #fff;
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            font-weight: bold;
-            letter-spacing: 1px;
+            background: #090e17;
+            border: 1px solid #1a2638;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 320px;
+            z-index: 2;
         }
 
-        .case-title { color: #00f0ff; font-weight: bold; margin-bottom: 8px; }
-        .case-desc { color: #a0aec0; font-size: 0.85rem; margin-bottom: 12px; line-height: 1.4; }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            background: #05070a;
-            border: 1px solid #00ff66;
-            color: #00ff66;
-            font-family: 'Fira Code', monospace;
-            margin-bottom: 10px;
-            outline: none;
-        }
-
-        .header-bar {
+        .win-header {
+            background: #0f172a;
+            padding: 8px 12px;
+            border-bottom: 1px solid #1a2638;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #00ff66;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #00f0ff;
         }
 
-        .avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: 2px solid #00ff66;
+        .win-controls i { cursor: pointer; color: #64748b; margin-left: 8px; }
+        .win-controls i:hover { color: #ff0055; }
+
+        .win-body { padding: 15px; flex: 1; overflow-y: auto; }
+
+        /* FILE EXPLORER INSIDE WINDOW */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 15px;
+        }
+        .folder-card {
+            background: #0d1522;
+            border: 1px solid #1e2d42;
+            border-radius: 6px;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+        .folder-card i { font-size: 2rem; color: #f59e0b; }
+        .folder-card:hover { border-color: #00f0ff; background: #131f33; }
+
+        /* CHAT / AGENT PANEL */
+        .chat-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 250px;
+        }
+        .chat-msg {
+            background: #0d1522;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border-left: 3px solid #00f0ff;
+        }
+
+        /* BOTTOM TASKBAR */
+        .taskbar {
+            height: 40px;
+            background: #080d16;
+            border-top: 1px solid #131d2e;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 10px;
+        }
+        .task-item {
+            background: #131f33;
+            border: 1px solid #1e2d42;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #00f0ff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* AUTH CONTAINER */
+        #auth-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 5, 10, 0.95);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-card {
+            background: #090e17;
+            border: 1px solid #00f0ff;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 360px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+        .btn-cyber {
+            background: #00f0ff;
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
 
-<div class="terminal-box">
-    <!-- AUTH EKRANI -->
-    <div id="auth-screen" style="text-align: center;">
-        <h1>🕵️‍♂️ TENEBRIS // TERMINAL</h1>
-        <p style="color: #8a99ad; font-size: 0.85rem; margin-bottom: 25px;">[ SYSTEM ACCESS REQUIRED ]<br>Davom etish uchun identifikatsiyadan o'ting.</p>
-        <button class="cyber-btn" onclick="loginWithGoogle()">> GOOGLE IDENTITY LINK</button>
+    <!-- AUTH SCREEN OVERLAY -->
+    <div id="auth-overlay">
+        <div class="login-card">
+            <h2 style="color: #00f0ff; margin-bottom: 10px;"><i class="fa-solid fa-user-secret"></i> DETECTIVE OS</h2>
+            <p style="color: #64748b; font-size: 0.85rem;">Tizimdan foydalanish uchun xavfsizlik autentifikatsiyasidan o'ting.</p>
+            <button class="btn-cyber" onclick="loginWithGoogle()"><i class="fa-brands fa-google"></i> Google Identity Sync</button>
+        </div>
     </div>
 
-    <!-- O'YIN EKRANI -->
-    <div id="game-screen" style="display: none;">
-        <div class="header-bar">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <img id="u-avatar" class="avatar" src="">
-                <div>
-                    <div id="u-name" style="font-size: 0.9rem; font-weight: bold;">AGEMT</div>
-                    <a id="admin-link" href="/admin.html" style="color: #ff0055; font-size: 0.75rem; display: none; text-decoration: none;">[ ADMIN ACCESS ]</a>
-                </div>
+    <!-- TOP HEADER BAR -->
+    <div class="top-bar">
+        <div class="brand"><i class="fa-solid fa-shield-halved"></i> TENEBRIS // SYSTEM v2.4</div>
+        <div class="user-profile">
+            <img id="u-avatar" class="u-avatar" src="https://via.placeholder.com/24">
+            <span id="u-name" style="font-weight: bold; font-size: 0.8rem;">OFFLINE</span>
+            <span id="u-level" style="color: #00f0ff; font-size: 0.75rem; background: rgba(0, 240, 255, 0.1); padding: 2px 6px; border-radius: 4px;">LVL 1</span>
+        </div>
+    </div>
+
+    <!-- DESKTOP WORKSPACE -->
+    <div class="desktop">
+        <!-- DESKTOP SHORTCUTS -->
+        <div class="desktop-icons">
+            <div class="app-icon" onclick="openWindow('cases-win')">
+                <i class="fa-solid fa-folder-closed"></i>
+                <span>Cases</span>
             </div>
-            <div id="u-level" style="border: 1px solid #00f0ff; color: #00f0ff; padding: 3px 8px; font-size: 0.8rem;">CLEARANCE: LVL 1</div>
+            <div class="app-icon" onclick="openWindow('evidence-win')">
+                <i class="fa-solid fa-file-contract"></i>
+                <span>Evidence</span>
+            </div>
+            <div class="app-icon" onclick="openWindow('agent-win')">
+                <i class="fa-solid fa-comments"></i>
+                <span>Comms</span>
+            </div>
+            <a id="admin-link" href="/admin.html" style="display: none; text-decoration: none;">
+                <div class="app-icon" style="color: #ff0055;">
+                    <i class="fa-solid fa-user-gear" style="color: #ff0055;"></i>
+                    <span>Admin OS</span>
+                </div>
+            </a>
         </div>
 
-        <h3 style="font-size: 0.9rem; color: #8a99ad; margin-bottom: 15px;">// ACTIVE CASE FILES:</h3>
-        <div id="cases-list"></div>
+        <!-- WINDOW 1: CASE FILES (FILE EXPLORER) -->
+        <div id="cases-win" class="os-window" style="width: 480px; top: 30px; left: 120px;">
+            <div class="win-header">
+                <span><i class="fa-solid fa-folder-open"></i> FILE EXPLORER // ACTIVE CASES</span>
+                <div class="win-controls"><i class="fa-solid fa-xmark" onclick="closeWindow('cases-win')"></i></div>
+            </div>
+            <div class="win-body">
+                <div id="cases-list" class="file-grid">
+                    <!-- CASES POPULATE HERE -->
+                </div>
+            </div>
+        </div>
+
+        <!-- WINDOW 2: COMMS / CHAT WITH AGENT -->
+        <div id="agent-win" class="os-window" style="width: 320px; top: 50px; right: 40px;">
+            <div class="win-header">
+                <span><i class="fa-solid fa-headset"></i> HQ DIRECT COMMS</span>
+                <div class="win-controls"><i class="fa-solid fa-xmark" onclick="closeWindow('agent-win')"></i></div>
+            </div>
+            <div class="win-body">
+                <div class="chat-box">
+                    <div class="chat-msg">
+                        <strong style="color: #00f0ff;">HQ Operator:</strong><br>
+                        Detektiv, yangi ma'lumotlar kelib tushdi. "Cases" papkasidan ishlarni ochib ko'ring.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+
+    <!-- BOTTOM TASKBAR -->
+    <div class="taskbar">
+        <div class="task-item"><i class="fa-solid fa-folder"></i> Active Cases</div>
+        <div class="task-item"><i class="fa-solid fa-terminal"></i> Terminal Ready</div>
+    </div>
 
 <script>
-    // OVOZ EFFECTLARI (SFX)
-    const clickSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
-    const successSound = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-
-    function playSound(type) {
-        if(type === 'click') clickSound.play().catch(() => {});
-        if(type === 'success') successSound.play().catch(() => {});
-    }
-
     const firebaseConfig = {
         apiKey: "AIzaSyALWGXz15GQslY6fJI8noiLbXKH-yCB1gI",
         authDomain: "web-ilova.firebaseapp.com",
@@ -182,9 +287,8 @@
     const socket = typeof io !== 'undefined' ? io() : null;
 
     function loginWithGoogle() {
-        playSound('click');
         const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(err => alert("ACCESS DENIED: " + err.message));
+        auth.signInWithPopup(provider).catch(err => alert(err.message));
     }
 
     auth.onAuthStateChanged((user) => {
@@ -201,15 +305,13 @@
 
     if (socket) {
         socket.on('auth-success', ({ user, cases }) => {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'block';
-
-            document.getElementById('u-avatar').src = user.photo || 'https://via.placeholder.com/40';
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('u-avatar').src = user.photo || 'https://via.placeholder.com/24';
             document.getElementById('u-name').innerText = user.name.toUpperCase();
-            document.getElementById('u-level').innerText = `CLEARANCE: LVL ${user.level}`;
+            document.getElementById('u-level').innerText = `LVL ${user.level}`;
 
             if (user.isAdmin) {
-                document.getElementById('admin-link').style.display = 'inline';
+                document.getElementById('admin-link').style.display = 'block';
             }
 
             renderCases(cases);
@@ -217,13 +319,12 @@
 
         socket.on('answer-result', (res) => {
             if (res.success) {
-                playSound('success');
-                alert("[ ACCESS GRANTED ] To'g me'mor xulosa!");
+                alert("[ DECRYPTION SUCCESS ] Javob to'g'ri!");
                 localStorage.setItem('p_level', res.newLevel);
-                document.getElementById('u-level').innerText = `CLEARANCE: LVL ${res.newLevel}`;
+                document.getElementById('u-level').innerText = `LVL ${res.newLevel}`;
                 renderCases(res.cases);
             } else {
-                alert("[ ACCESS DENIED ] Noto'g'ri kod!");
+                alert("[ ERROR ] Noto'g'ri kod/kalit so'z.");
             }
         });
     }
@@ -233,31 +334,32 @@
         container.innerHTML = '';
 
         if (!cases || cases.length === 0) {
-            container.innerHTML = '<p style="color: #8a99ad; font-size: 0.8rem;">// NO ACTIVE CASES ASSIGNED.</p>';
+            container.innerHTML = '<p style="color: #64748b; font-size: 0.8rem; grid-column: span 3;">Papka bo'sh.</p>';
             return;
         }
 
         cases.forEach(c => {
-            const folder = document.createElement('div');
-            folder.className = 'case-folder';
-            folder.innerHTML = `
-                <div class="case-title">[CASE #${c.id.toString().slice(-4)}] ${c.title}</div>
-                <div style="font-size: 0.7rem; color: #ff0055; margin-bottom: 8px;">TYPE: ${c.category || 'CLASSIFIED'}</div>
-                <div class="case-desc">${c.desc}</div>
-                <input type="text" id="ans-${c.id}" placeholder="EXECUTE DECRYPTION CODE...">
-                <button class="cyber-btn" onclick="submitAnswer(${c.id})">VERIFY CODE</button>
+            const card = document.createElement('div');
+            card.className = 'folder-card';
+            card.onclick = () => openCaseDetail(c);
+            card.innerHTML = `
+                <i class="fa-solid fa-folder-closed"></i>
+                <div style="color: #fff; font-weight: bold;">[L-${c.level}]</div>
+                <div style="color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;">${c.title}</div>
             `;
-            container.appendChild(folder);
+            container.appendChild(card);
         });
     }
 
-    function submitAnswer(caseId) {
-        playSound('click');
-        const input = document.getElementById(`ans-${caseId}`).value;
-        if (input && socket) {
-            socket.emit('submit-answer', { caseId, answer: input });
+    function openCaseDetail(c) {
+        const inputCode = prompt(`${c.title}\n\n${c.desc}\n\nKodni kiriting:`);
+        if (inputCode && socket) {
+            socket.emit('submit-answer', { caseId: c.id, answer: inputCode });
         }
     }
+
+    function openWindow(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeWindow(id) { document.getElementById(id).style.display = 'none'; }
 </script>
 </body>
 </html>
