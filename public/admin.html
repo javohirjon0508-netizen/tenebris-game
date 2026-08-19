@@ -3,24 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TENEBRIS // MASTER ADMIN</title>
+    <title>TENEBRIS // MASTER ADMIN OS</title>
 
+    <!-- Socket.io & Chart.js -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase SDK (v8.10.1) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            --bg-dark: #030712;
-            --panel-bg: #0b0f19;
-            --border-color: #1e293b;
+            --bg-dark: #02050a;
+            --panel-bg: #090e17;
+            --border-color: #1a2638;
             --accent-cyan: #00f0ff;
             --accent-pink: #ff0055;
-            --text-main: #f3f4f6;
+            --text-main: #d1d5db;
             --text-muted: #64748b;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Inter, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', monospace; }
         
         body {
             background-color: var(--bg-dark);
@@ -28,15 +36,14 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
-            /* Topografik orqa fon effekti */
             background-image: radial-gradient(circle at 90% 10%, rgba(0, 240, 255, 0.03) 0%, transparent 40%),
                               radial-gradient(circle at 10% 90%, rgba(255, 0, 85, 0.03) 0%, transparent 40%);
         }
 
         /* SIDEBAR */
         .sidebar {
-            width: 240px;
-            background: #060911;
+            width: 230px;
+            background: #050810;
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
@@ -44,50 +51,42 @@
         }
 
         .brand {
-            font-size: 1.1rem;
-            font-weight: 800;
+            font-size: 1rem;
+            font-weight: bold;
             color: var(--accent-cyan);
-            letter-spacing: 1.5px;
-            margin-bottom: 30px;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .nav-section {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 15px 0 8px 10px;
+            gap: 8px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             padding: 10px 12px;
-            color: #94a3b8;
+            color: var(--text-muted);
             text-decoration: none;
             font-size: 0.85rem;
-            border-radius: 6px;
-            transition: 0.2s;
+            border-radius: 4px;
             margin-bottom: 4px;
+            cursor: pointer;
         }
 
         .nav-item:hover, .nav-item.active {
-            background: rgba(0, 240, 255, 0.08);
+            background: rgba(0, 240, 255, 0.1);
             color: var(--accent-cyan);
         }
 
-        /* MAIN CONTENT AREA */
+        /* MAIN CONTENT */
         .main-content {
             flex: 1;
-            padding: 25px;
+            padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         .header-bar {
@@ -96,349 +95,326 @@
             align-items: center;
         }
 
-        .header-title h1 { font-size: 1.5rem; font-weight: 700; }
-        .header-title p { font-size: 0.8rem; color: var(--text-muted); }
-
-        /* KPI METRIC CARDS */
+        /* KPI METRICS */
         .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-        }
-
-        .kpi-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 16px;
-            position: relative;
-        }
-
-        .kpi-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-        }
-
-        .kpi-value {
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin: 10px 0 5px;
-            color: #fff;
-        }
-
-        .kpi-badge {
-            font-size: 0.75rem;
-            color: #10b981;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* QUICK ACTION BUTTONS */
-        .quick-actions {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 12px;
         }
 
-        .action-card {
+        .kpi-card {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
-            padding: 12px 16px;
             border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.2s;
+            padding: 14px;
         }
 
-        .action-card:hover {
-            border-color: var(--accent-cyan);
-            transform: translateY(-2px);
-        }
+        .kpi-title { font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+        .kpi-value { font-size: 1.5rem; font-weight: bold; color: #fff; margin-top: 5px; }
 
-        .action-card span { font-size: 0.85rem; font-weight: 600; }
-        .action-card i { color: var(--accent-cyan); font-size: 0.8rem; }
-
-        /* DASHBOARD GRID SYSTEM */
-        .dashboard-grid {
+        /* QUICK ACTIONS */
+        .quick-actions {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-
-        .panel-box {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 18px;
-        }
-
-        .panel-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* DATA TABLE */
-        .custom-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-
-        .custom-table th {
-            text-align: left;
-            padding: 10px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-        }
-
-        .custom-table td {
-            padding: 12px 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .user-cell {
-            display: flex;
-            align-items: center;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
 
-        .user-cell img {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 1px solid var(--accent-cyan);
+        .action-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--accent-cyan);
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .status-badge {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            padding: 2px 8px;
-            border-radius: 12px;
+        .action-btn:hover { border-color: var(--accent-cyan); background: rgba(0, 240, 255, 0.05); }
+
+        /* PANELS */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .panel-title { font-size: 0.85rem; font-weight: bold; color: var(--accent-cyan); margin-bottom: 12px; display: flex; justify-content: space-between; }
+
+        /* TABLE */
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th, td { border-bottom: 1px solid var(--border-color); padding: 8px; text-align: left; }
+        th { color: var(--text-muted); }
+
+        .btn-sm {
+            padding: 3px 8px;
             font-size: 0.7rem;
-            font-weight: 600;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-del { background: var(--accent-pink); color: #fff; }
+        .btn-add { background: var(--accent-cyan); color: #000; font-weight: bold; }
+
+        /* MODAL (YANGI CASE / BROADCAST UCHUN) */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 5, 10, 0.85);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--panel-bg);
+            border: 1px solid var(--accent-cyan);
+            width: 400px;
+            padding: 20px;
+            border-radius: 6px;
+        }
+
+        input, textarea {
+            width: 100%; background: #02050a; border: 1px solid var(--border-color); color: #fff;
+            padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
 
-    <!-- LEFT SIDEBAR -->
+    <!-- SIDEBAR -->
     <div class="sidebar">
-        <div class="brand">
-            <i class="fa-solid fa-shield-halved"></i> TENEBRIS // OS
-        </div>
-
-        <div class="nav-section">Core Systems</div>
-        <a href="#" class="nav-item active"><i class="fa-solid fa-chart-pie"></i> Control Panel</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-folder-tree"></i> Active Cases</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-users-gear"></i> Agents List</a>
-
-        <div class="nav-section">Security & Logs</div>
-        <a href="#" class="nav-item"><i class="fa-solid fa-terminal"></i> Terminal Logs</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-sliders"></i> System Settings</a>
+        <div class="brand"><i class="fa-solid fa-user-gear"></i> ADMIN PANEL</div>
+        <div class="nav-item active"><i class="fa-solid fa-chart-line"></i> Dashboard</div>
+        <a href="/" class="nav-item" style="margin-top: auto; color: var(--accent-pink);"><i class="fa-solid fa-desktop"></i> OS ga qaytish</a>
     </div>
 
-    <!-- MAIN CONTENT AREA -->
+    <!-- MAIN CONTENT -->
     <div class="main-content">
-        
-        <!-- HEADER -->
         <div class="header-bar">
-            <div class="header-title">
-                <h1>Control Panel</h1>
-                <p>Check all the main details of the detective network</p>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button style="background: var(--accent-pink); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    <i class="fa-solid fa-plus"></i> New Case
-                </button>
-            </div>
+            <h2>System Control & Real-Time Monitoring</h2>
+            <button class="action-btn" style="background: var(--accent-pink); color: #fff;" onclick="openModal('case-modal')">
+                <i class="fa-solid fa-plus"></i> Yangi Case Qo'shish
+            </button>
         </div>
 
-        <!-- QUICK ACTIONS (1-Rasm elementlari) -->
+        <!-- TEZKOR AMALLAR -->
         <div class="quick-actions">
-            <div class="action-card">
-                <span>Create Note</span> <i class="fa-solid fa-chevron-right"></i>
-            </div>
-            <div class="action-card">
-                <span>Broadcast Comms</span> <i class="fa-solid fa-chevron-right"></i>
-            </div>
-            <div class="action-card">
-                <span>Assign Case</span> <i class="fa-solid fa-chevron-right"></i>
-            </div>
-            <div class="action-card">
-                <span>System Security</span> <i class="fa-solid fa-chevron-right"></i>
-            </div>
+            <button class="action-btn" onclick="openModal('broadcast-modal')"><i class="fa-solid fa-bullhorn"></i> Global Broadcast Yuborish</button>
+            <button class="action-btn" onclick="refreshData()"><i class="fa-solid fa-rotate"></i> Ma'lumotlarni Yangilash</button>
+            <button class="action-btn" onclick="clearSystemLogs()"><i class="fa-solid fa-trash-can"></i> Loglarni Tozalash</button>
         </div>
 
-        <!-- KPI METRICS (2-Rasm elementlari) -->
+        <!-- REAL METRIKALAR (KPI) -->
         <div class="kpi-grid">
             <div class="kpi-card">
-                <div class="kpi-header">
-                    <span>Total Detectives</span> <i class="fa-solid fa-users"></i>
-                </div>
-                <div class="kpi-value">124,592</div>
-                <div class="kpi-badge"><i class="fa-solid fa-arrow-trend-up"></i> +12.5% this week</div>
+                <div class="kpi-title">JAMI DETEKTIVLAR <i class="fa-solid fa-users"></i></div>
+                <div class="kpi-value" id="kpi-users">0</div>
             </div>
-
             <div class="kpi-card">
-                <div class="kpi-header">
-                    <span>Active Cases</span> <i class="fa-solid fa-folder-open"></i>
-                </div>
-                <div class="kpi-value">42</div>
-                <div class="kpi-badge"><i class="fa-solid fa-arrow-trend-up"></i> +2.4% new tasks</div>
+                <div class="kpi-title">FAOL CASE-LAR <i class="fa-solid fa-folder-open"></i></div>
+                <div class="kpi-value" id="kpi-cases">0</div>
             </div>
-
             <div class="kpi-card">
-                <div class="kpi-header">
-                    <span>Decryption Rate</span> <i class="fa-solid fa-key"></i>
-                </div>
-                <div class="kpi-value">88.4%</div>
-                <div class="kpi-badge"><i class="fa-solid fa-arrow-trend-up"></i> Stable</div>
+                <div class="kpi-title">ONLINE AGENTLAR <i class="fa-solid fa-signal"></i></div>
+                <div class="kpi-value" style="color: #10b981;" id="kpi-online">0</div>
             </div>
-
             <div class="kpi-card">
-                <div class="kpi-header">
-                    <span>Server Load</span> <i class="fa-solid fa-microchip"></i>
-                </div>
-                <div class="kpi-value" style="color: var(--accent-cyan);">64%</div>
-                <div class="kpi-badge" style="color: var(--text-muted);"><i class="fa-solid fa-check"></i> Normal</div>
+                <div class="kpi-title">SERVER YUKLAMASI <i class="fa-solid fa-microchip"></i></div>
+                <div class="kpi-value" style="color: var(--accent-cyan);" id="kpi-ping">12 ms</div>
             </div>
         </div>
 
-        <!-- DASHBOARD GRID -->
+        <!-- GRAFIK VA JONLI AGENTLAR -->
         <div class="dashboard-grid">
-            
-            <!-- LEFT: CHART PANEL -->
-            <div class="panel-box">
-                <div class="panel-title">
-                    <span>Agent Activity & Cases Solved</span>
-                    <i class="fa-solid fa-ellipsis-vertical" style="color: var(--text-muted);"></i>
-                </div>
-                <canvas id="activityChart" height="110"></canvas>
+            <div class="panel">
+                <div class="panel-title">Tizim Faolligi Grafigi</div>
+                <canvas id="liveChart" height="100"></canvas>
             </div>
-
-            <!-- RIGHT: AGENT LIST PANEL (1-Rasm Incarcerated/Agents uslubi) -->
-            <div class="panel-box">
-                <div class="panel-title">
-                    <span>Active Agents</span>
-                    <span style="color: var(--accent-cyan); font-size: 0.75rem;">View All</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 6px;">
-                        <div class="user-cell">
-                            <img src="https://via.placeholder.com/28" alt="Agent">
-                            <div>
-                                <div style="font-size: 0.8rem; font-weight: bold;">G. Davis</div>
-                                <div style="font-size: 0.7rem; color: var(--text-muted);">LVL 4 Detective</div>
-                            </div>
-                        </div>
-                        <span class="status-badge">Online</span>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 6px;">
-                        <div class="user-cell">
-                            <img src="https://via.placeholder.com/28" alt="Agent">
-                            <div>
-                                <div style="font-size: 0.8rem; font-weight: bold;">J. Miller</div>
-                                <div style="font-size: 0.7rem; color: var(--text-muted);">LVL 2 Operator</div>
-                            </div>
-                        </div>
-                        <span class="status-badge">Online</span>
-                    </div>
-
-                </div>
+            <div class="panel">
+                <div class="panel-title">Foydalanuvchilar va LVL</div>
+                <table>
+                    <thead>
+                        <tr><th>Agent</th><th>LVL</th><th>Amal</th></tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <!-- Socket orqali jonli yuklanadi -->
+                    </tbody>
+                </table>
             </div>
-
         </div>
 
-        <!-- RECENT ACTIVITY TABLE -->
-        <div class="panel-box">
-            <div class="panel-title">
-                <span>Recent System Logs</span>
-            </div>
-            <table class="custom-table">
+        <!-- MAVJUD CASE-LAR RO'YXATI -->
+        <div class="panel">
+            <div class="panel-title">Barcha Aktiv Case-lar</div>
+            <table>
                 <thead>
-                    <tr>
-                        <th>Agent</th>
-                        <th>Action</th>
-                        <th>Target Case</th>
-                        <th>Time</th>
-                        <th>Status</th>
-                    </tr>
+                    <tr><th>ID</th><th>Level</th><th>Nomi</th><th>To'g'ri Parol</th><th>O'chirish</th></tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <div class="user-cell">
-                                <img src="https://via.placeholder.com/28">
-                                <span>Alex Rivers</span>
-                            </div>
-                        </td>
-                        <td>Solved Encryption</td>
-                        <td style="color: var(--accent-cyan);">Case #084</td>
-                        <td style="color: var(--text-muted);">2m ago</td>
-                        <td><span class="status-badge">Success</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="user-cell">
-                                <img src="https://via.placeholder.com/28">
-                                <span>Sarah Chen</span>
-                            </div>
-                        </td>
-                        <td>Joined System</td>
-                        <td style="color: var(--text-muted);">-</td>
-                        <td style="color: var(--text-muted);">15m ago</td>
-                        <td><span class="status-badge">Online</span></td>
-                    </tr>
+                <tbody id="cases-table-body">
+                    <!-- Socket orqali jonli yuklanadi -->
                 </tbody>
             </table>
         </div>
-
     </div>
 
-    <script>
-        // CHART.JS INIT (Silliq o'sish grafigi)
-        const ctx = document.getElementById('activityChart').getContext('2d');
-        
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
-        gradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+    <!-- MODAL 1: YANGI CASE YARATISH -->
+    <div id="case-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--accent-cyan); margin-bottom: 10px;">Yangi Case Yaratish</h3>
+            <input type="text" id="c-id" placeholder="Case ID (masalan: case_05)">
+            <input type="text" id="c-title" placeholder="Case Nomi">
+            <input type="number" id="c-level" placeholder="Talab etiladigan Level" value="1">
+            <textarea id="c-desc" placeholder="Topshiriq Matni"></textarea>
+            <input type="text" id="c-answer" placeholder="To'g'ri Parol / Kod">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-sm btn-add" style="flex:1; padding: 8px;" onclick="submitNewCase()">Saqlash</button>
+                <button class="btn-sm btn-del" style="flex:1; padding: 8px;" onclick="closeModal('case-modal')">Yopish</button>
+            </div>
+        </div>
+    </div>
 
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Active Players',
-                    data: [1200, 1900, 1500, 2200, 3100, 2800, 3500],
-                    borderColor: '#00f0ff',
-                    borderWidth: 2,
-                    fill: true,
-                    backgroundColor: gradient,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
-                }
-            }
+    <!-- MODAL 2: BROADCAST XABAR -->
+    <div id="broadcast-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--accent-pink); margin-bottom: 10px;">HQ Comms Broadcast</h3>
+            <textarea id="b-msg" rows="4" placeholder="Barcha detektivlar ekraniga yuboriladigan xabarni kiriting..."></textarea>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-sm btn-add" style="flex:1; padding: 8px;" onclick="sendBroadcast()">Yuborish</button>
+                <button class="btn-sm btn-del" style="flex:1; padding: 8px;" onclick="closeModal('broadcast-modal')">Yopish</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Socket.io Ulanish
+    const socket = typeof io !== 'undefined' ? io() : null;
+
+    // Chart.js Ishga tushirish
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    const liveChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['10m', '8m', '6m', '4m', '2m', 'Hozir'],
+            datasets: [{
+                label: 'Onlayn Foydalanuvchilar',
+                data: [0, 0, 0, 0, 0, 0],
+                borderColor: '#00f0ff',
+                backgroundColor: 'rgba(0, 240, 255, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    if (socket) {
+        socket.emit('admin-init');
+
+        // Real vaqtda barcha Case-larni qabul qilish
+        socket.on('admin-cases-data', (cases) => {
+            document.getElementById('kpi-cases').innerText = cases.length;
+            const tbody = document.getElementById('cases-table-body');
+            tbody.innerHTML = '';
+            cases.forEach(c => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${c.id}</b></td>
+                        <td>LVL ${c.level}</td>
+                        <td>${c.title}</td>
+                        <td style="color: var(--accent-cyan);">${c.answer}</td>
+                        <td><button class="btn-sm btn-del" onclick="deleteCase('${c.id}')">O'chirish</button></td>
+                    </tr>
+                `;
+            });
         });
-    </script>
+
+        // Real vaqtda barcha User-larni qabul qilish
+        socket.on('admin-users-data', (users) => {
+            document.getElementById('kpi-users').innerText = users.length;
+            document.getElementById('kpi-online').innerText = users.filter(u => u.isOnline).length;
+            
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${u.displayName || 'Anonim'}</td>
+                        <td>LVL ${u.level || 1}</td>
+                        <td><button class="btn-sm btn-add" onclick="addLevel('${u.uid}', ${(u.level||1) + 1})">+1 Level</button></td>
+                    </tr>
+                `;
+            });
+
+            // Grafikni yangilash
+            liveChart.data.datasets[0].data.shift();
+            liveChart.data.datasets[0].data.push(users.filter(u => u.isOnline).length);
+            liveChart.update();
+        });
+    }
+
+    // Modal funksiyalari
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // REAL AMALLAR:
+
+    // 1. Yangi Case Qo'shish
+    function submitNewCase() {
+        const caseData = {
+            id: document.getElementById('c-id').value,
+            title: document.getElementById('c-title').value,
+            level: parseInt(document.getElementById('c-level').value),
+            desc: document.getElementById('c-desc').value,
+            answer: document.getElementById('c-answer').value
+        };
+
+        if(caseData.id && caseData.answer && socket) {
+            socket.emit('admin-create-case', caseData);
+            alert("Case muvaffaqiyatli saqlandi!");
+            closeModal('case-modal');
+        } else {
+            alert("Barcha maydonlarni to'ldiring!");
+        }
+    }
+
+    // 2. Case-ni o'chirish
+    function deleteCase(id) {
+        if(confirm(`Rostdan ham ${id} ni o'chirmoqchimisiz?`) && socket) {
+            socket.emit('admin-delete-case', { id });
+        }
+    }
+
+    // 3. User Levelini oshirish
+    function addLevel(uid, newLevel) {
+        if(socket) socket.emit('admin-update-user-level', { uid, level: newLevel });
+    }
+
+    // 4. Global Broadcast Yuborish
+    function sendBroadcast() {
+        const msg = document.getElementById('b-msg').value;
+        if(msg && socket) {
+            socket.emit('admin-broadcast-msg', { text: msg });
+            alert("Broadcast yuborildi!");
+            closeModal('broadcast-modal');
+        }
+    }
+
+    function refreshData() {
+        if(socket) socket.emit('admin-init');
+    }
+</script>
 </body>
 </html>
