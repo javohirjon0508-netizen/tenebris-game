@@ -5,108 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tenebris-Detektiv</title>
 
-    <!-- SOCKET.IO VA FIREBASE COMPAT SDK LARI -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #0d0f12;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .login-container {
-            text-align: center;
-            max-width: 400px;
-            padding: 20px;
-            width: 100%;
-        }
-        h1 {
-            font-size: 2.2rem;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            color: #00f0ff;
-        }
-        p {
-            color: #a0aec0;
-            font-size: 1rem;
-            line-height: 1.5;
-            margin-bottom: 30px;
-        }
-        .google-btn {
-            background-color: #f4c430; /* Nuqta-vergul to'g'rilandi */
-            color: #1a202c;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: all 0.2s ease;
-            width: 100%;
-        }
-        .google-btn:hover {
-            background-color: #edf2f7;
-            transform: translateY(-2px);
-        }
-        .case-card {
-            background: #12151e;
-            border: 1px solid #1f293d;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            text-align: left;
-        }
-        .case-title { color: #00f0ff; font-size: 1.1rem; margin-bottom: 8px; }
+        body { margin: 0; padding: 20px; background-color: #0d0f12; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .container { max-width: 480px; width: 100%; }
+        h1 { font-size: 2rem; color: #00f0ff; text-align: center; margin-bottom: 10px; }
+        .google-btn { background-color: #f4c430; color: #1a202c; border: none; padding: 15px; font-size: 1.1rem; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; }
+        .case-card { background: #12151e; border: 1px solid #1f293d; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .case-title { color: #00f0ff; font-size: 1.1rem; font-weight: bold; margin-bottom: 6px; }
         .case-desc { font-size: 0.9rem; color: #94a3b8; margin-bottom: 12px; }
-        input[type="text"], textarea, input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            background: #090a0f;
-            border: 1px solid #1f293d;
-            border-radius: 8px;
-            color: #fff;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-        }
-        .btn-action {
-            width: 100%;
-            padding: 12px;
-            background: #00f0ff;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        input[type="text"] { width: 100%; padding: 10px; background: #090a0f; border: 1px solid #1f293d; border-radius: 8px; color: #fff; box-sizing: border-box; outline: none; margin-bottom: 10px; }
+        .btn-action { width: 100%; padding: 12px; background: #00f0ff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- AUTH EKRANI -->
-    <div id="auth-screen" class="login-container">
+    <div id="auth-screen" class="container" style="text-align: center;">
         <h1>🕵️‍♂️ TENEBRIS-DETEKTIV</h1>
-        <p>Jinoyatlarni ochish va darajalarni oshirish uchun Google hisobingiz bilan kiring.</p>
-        <!-- ONCLICK HODISASI QO'SHILDI -->
-        <button class="google-btn" id="google-login-btn" onclick="loginWithGoogle()">G Google orqali kirish</button>
+        <p style="color: #a0aec0; margin-bottom: 30px;">Tizimga kirish uchun Google hisobingizdan foydalaning.</p>
+        <button class="google-btn" onclick="loginWithGoogle()">G Google orqali kirish</button>
     </div>
 
-    <!-- O'YIN EKRANI (Dastlab yashiringan) -->
-    <div id="game-screen" style="display: none; width: 100%; max-width: 480px; padding: 20px;">
+    <div id="game-screen" class="container" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #1f293d; padding-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <img id="u-avatar" src="" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00f0ff;">
                 <div>
                     <div id="u-name" style="font-weight: bold;">Detektiv</div>
-                    <span id="admin-tag" style="color: #ff0055; font-size: 0.8rem; display: none;">ADMIN</span>
+                    <a id="admin-link" href="/admin.html" style="color: #ff0055; font-size: 0.8rem; display: none; text-decoration: none; font-weight: bold;">[ ADMIN PANELGA O'TISH ]</a>
                 </div>
             </div>
             <div id="u-level" style="background: rgba(0, 240, 255, 0.1); color: #00f0ff; border: 1px solid #00f0ff; padding: 4px 12px; border-radius: 12px; font-size: 0.9rem; font-weight: bold;">LEVEL 1</div>
@@ -114,20 +43,9 @@
 
         <h3 style="color: #a0aec0; margin-bottom: 15px;">OCHIQ JINOYAT ISHLARI</h3>
         <div id="cases-list"></div>
-
-        <!-- ADMIN PANEL -->
-        <div id="admin-panel" style="display: none; border-top: 2px dashed #ff0055; margin-top: 30px; padding-top: 20px;">
-            <h3 style="color: #ff0055; margin-bottom: 10px;">⚙️ ADMIN: YANGI JINOYAT QO'SHISH</h3>
-            <input type="number" id="adm-level" placeholder="Daraja (Level)" value="1">
-            <input type="text" id="adm-title" placeholder="Jinoyat sarlavhasi">
-            <textarea id="adm-desc" placeholder="Tavsif va topishmoq..."></textarea>
-            <input type="text" id="adm-answer" placeholder="To'g'ri javob / Parol">
-            <button class="btn-action" style="background: #ff0055; color: #fff;" onclick="addCase()">CHOP ETISH</button>
-        </div>
     </div>
 
 <script>
-    // FIREBASE SOZLAMALARI
     const firebaseConfig = {
         apiKey: "AIzaSyALWGXz15GQslY6fJI8noiLbXKH-yCB1gI",
         authDomain: "web-ilova.firebaseapp.com",
@@ -138,37 +56,24 @@
         measurementId: "G-TFCS0P7416"
     };
 
-    // Firebase'ni ishga tushirish
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const socket = typeof io !== 'undefined' ? io() : null;
 
-    let currentUser = null;
-
-    // GOOGLE ORQALI KIRISH FUNKSIYASI
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        
-        auth.signInWithPopup(provider)
-            .then((result) => {
-                alert("Muvaffaqiyatli kirildi: " + result.user.displayName);
-            })
-            .catch((error) => {
-                alert("GOOGLE AUTH XATOSI:\nKod: " + error.code + "\nXabar: " + error.message);
-            });
+        auth.signInWithPopup(provider).catch(err => alert("Xato: " + err.message));
     }
 
-    // FOYDALANUVCHI HOLATINI KUZATISH
     auth.onAuthStateChanged((user) => {
-        if (user) {
-            currentUser = {
+        if (user && socket) {
+            socket.emit('player-login', {
                 uid: user.uid,
                 displayName: user.displayName,
                 email: user.email,
                 photoURL: user.photoURL,
                 level: parseInt(localStorage.getItem('p_level') || 1)
-            };
-            if (socket) socket.emit('player-login', currentUser);
+            });
         }
     });
 
@@ -182,8 +87,7 @@
             document.getElementById('u-level').innerText = `LEVEL ${user.level}`;
 
             if (user.isAdmin) {
-                document.getElementById('admin-tag').style.display = 'inline';
-                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('admin-link').style.display = 'inline';
             }
 
             renderCases(cases);
@@ -191,7 +95,7 @@
 
         socket.on('answer-result', (res) => {
             if (res.success) {
-                alert("To'g'ri! Keyingi daraja ochildi.");
+                alert("To'g'ri xulosa! Keyingi daraja ochildi.");
                 localStorage.setItem('p_level', res.newLevel);
                 document.getElementById('u-level').innerText = `LEVEL ${res.newLevel}`;
                 renderCases(res.cases);
@@ -214,10 +118,11 @@
             const card = document.createElement('div');
             card.className = 'case-card';
             card.innerHTML = `
-                <div class="case-title">[L- ${c.level}] ${c.title}</div>
+                <div class="case-title">[L-${c.level}] ${c.title}</div>
+                <div style="font-size: 0.75rem; color: #ff0055; margin-bottom: 5px; font-weight: bold;">${c.category || 'Tergov'}</div>
                 <div class="case-desc">${c.desc}</div>
-                <input type="text" id="ans-${c.id}" placeholder="Kodni kiritish...">
-                <button class="btn-action" onclick="submitAnswer(${c.id})">TEKSHIRISH</button>
+                <input type="text" id="ans-${c.id}" placeholder="Javob yoki gumondor ID si...">
+                <button class="btn-action" onclick="submitAnswer(${c.id})">XULOSANI TOPSHIRISH</button>
             `;
             container.appendChild(card);
         });
@@ -227,18 +132,6 @@
         const input = document.getElementById(`ans-${caseId}`).value;
         if (input && socket) {
             socket.emit('submit-answer', { caseId, answer: input });
-        }
-    }
-
-    function addCase() {
-        const level = document.getElementById('adm-level').value;
-        const title = document.getElementById('adm-title').value;
-        const desc = document.getElementById('adm-desc').value;
-        const answer = document.getElementById('adm-answer').value;
-
-        if (title && desc && answer && socket) {
-            socket.emit('add-case', { level, title, desc, answer });
-            alert("Jinoyat ishi qo'shildi!");
         }
     }
 </script>
