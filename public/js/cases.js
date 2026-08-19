@@ -69,3 +69,23 @@ export async function renderSingleCase() {
     `;
   }
 }
+const socket = typeof io !== 'undefined' ? io() : null;
+
+if (socket) {
+  socket.on('cases-updated', (casesList) => {
+    const grid = document.getElementById('cases-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    casesList.forEach(c => {
+      grid.innerHTML += `
+        <div class="case-card" style="border: 1px solid #00f0ff; background: #090e17; padding: 15px; margin: 10px; border-radius: 8px;">
+          <h3 style="color: #fff;">${c.title}</h3>
+          <p style="color: #00f0ff;">Talab darajasi: LVL ${c.level}</p>
+          <p style="color: #8a99ad;">${c.desc}</p>
+          <a href="case.html?id=${c.id}" style="display: inline-block; padding: 8px 15px; background: #00f0ff; color: #000; text-decoration: none; font-weight: bold; border-radius: 4px;">ISHNI OCHISH</a>
+        </div>
+      `;
+    });
+  });
+)s
